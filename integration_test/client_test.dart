@@ -23,4 +23,23 @@ void main() {
     var collector = await client.getCollector("EX20 1ZF");
     expect(collector.name, isNotNull);
   });
+
+  test('getAddresses', () async {
+    var collector = await client.getCollector("EX20 1ZF");
+    expect(collector.name, isNotNull);
+
+    var addresses = await client.getAddresses(collector, "EX20 1ZF");
+    expect(addresses, isNotEmpty);
+  });
+
+  test('getBinDays', () async {
+    var collector = await client.getCollector("EX20 1ZF");
+    expect(collector.name, isNotNull);
+
+    var addresses = await client.getAddresses(collector, "EX20 1ZF");
+    expect(addresses, isNotEmpty);
+
+    var binDays = await client.getBinDays(collector, addresses.first);
+    expect(binDays, isNotEmpty);
+  });
 }

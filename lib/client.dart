@@ -110,6 +110,12 @@ class Client {
     // Construct the path using the collector's ID
     final url = baseUrl.add("/${collector.govUkId}/binDays");
 
+    // Add postcode and uid as query parameters
+    url.queryParameters.addAll({
+      "postcode": address.postcode!,
+      "uid": address.uid!,
+    });
+
     // For verbose error message
     final addressString = _formatAddress(address);
 

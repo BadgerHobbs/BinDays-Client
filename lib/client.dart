@@ -13,187 +13,174 @@ import 'package:package/models/get_addresses_response.dart';
 import 'package:package/models/get_bin_days_response.dart';
 import 'package:package/models/get_collector_response.dart';
 
+/// A client for interacting with the BinDays API.
+///
+/// This class provides methods for retrieving collectors, addresses, and bin days
+/// from the BinDays API. It handles multi-step requests indicated by the API.
 class Client {
+  /// The authority (domain) of the BinDays API.
   final String authority;
-  late http.Client httpClient;
 
-  Client(this.authority) {
-    httpClient = http.Client();
-  }
+  /// The HTTP client used for making requests.
+  final http.Client httpClient;
 
+  /// Creates a new BinDays API client.
+  ///
+  /// Requires the API [authority] (e.g. "api.bindays.app") and an
+  /// [httpClient] instance. The caller is responsible for managing the
+  /// lifecycle of the [httpClient] (including closing it).
+  Client(this.authority, this.httpClient);
+
+  /// Retrieves a [Collector] for a given postcode.
+  ///
+  /// [postcode] The postcode to search for.
+  ///
+  /// Returns a [Collector] object.
+  /// Throws an [Exception] if the request fails or no collector is found.
   Future<Collector> getCollector(String postcode) async {
-    // Prepare URL to get collector
-    var getCollectorUrl = Uri.https(
-      authority,
-      "/collectors?postcode=$postcode",
+    final Uri url = Uri.https(authority, "/collectors", {"postcode": postcode});
+
+    return await _fetchData<Collector, GetCollectorResponse>(
+      url: url,
+      responseParser: (json) => GetCollectorResponse.fromJson(json),
+      dataExtractor: (response) => response.collector,
+      nextRequestExtractor: (response) => response.nextClientSideRequest,
+      errorMessage: "No collector found for postcode '$postcode'.",
     );
-
-    // Store response for multi-step requests
-    ClientSideRequest? clientSideRequest;
-
-    // Send requests until collector received
-    while (true) {
-      // Make client-side request if provided
-      ClientSideResponse? clientSideResponse;
-      if (clientSideRequest != null) {
-        clientSideResponse = await _sendClientSideRequest(clientSideRequest);
-      }
-
-      // Prepare request to get collector (may be multi-step)
-      var requestJson = clientSideResponse?.toJson();
-      var response = await httpClient.post(
-        getCollectorUrl,
-        headers: {"Content-Type": "application/json"},
-        body: requestJson,
-      );
-
-      // Validate response success
-      response.isSuccessStatusCode();
-
-      // Parse response
-      var responseJson = jsonDecode(response.body);
-      var getCollectorResponse = GetCollectorResponse.fromJson(responseJson);
-
-      // If collector was returned, exit
-      if (getCollectorResponse.collector != null) {
-        return getCollectorResponse.collector!;
-      }
-      // Otherwise, make next request (if provided)
-      else if (getCollectorResponse.nextClientSideRequest != null) {
-        clientSideRequest = getCollectorResponse.nextClientSideRequest;
-      }
-      // If no collector or next request, throw exception
-      else {
-        throw Exception(
-          "No collector or next request provided for postcode '$postcode'.",
-        );
-      }
-    }
   }
 
+  /// Retrieves a list of [Address] for a given postcode.
+  ///
+  /// [postcode] The postcode to search for.
+  ///
+  /// Returns a list of [Address] objects.
+  /// Throws an [Exception] if the request fails or no addresses are found.
   Future<List<Address>> getAddresses(String postcode) async {
-    // Prepare URL to get addresses
-    var getAddressesUrl = Uri.https(authority, "/addresses", {
-      "postcode": postcode,
-    });
+    final Uri url = Uri.https(authority, "/addresses", {"postcode": postcode});
 
-    // Store response for multi-step requests
-    ClientSideRequest? clientSideRequest;
-
-    // Send requests until addresses received
-    while (true) {
-      // Make client-side request if provided
-      ClientSideResponse? clientSideResponse;
-      if (clientSideRequest != null) {
-        clientSideResponse = await _sendClientSideRequest(clientSideRequest);
-      }
-
-      // Prepare request to get address (may be multi-step)
-      var requestJson = clientSideResponse?.toJson();
-      var response = await httpClient.post(
-        getAddressesUrl,
-        headers: {"Content-Type": "application/json"},
-        body: requestJson,
-      );
-
-      // Validate response success
-      response.isSuccessStatusCode();
-
-      // Parse response
-      var responseJson = jsonDecode(response.body);
-      var getAddressesResponse = GetAddressesResponse.fromJson(responseJson);
-
-      // If addresses were returned, exit
-      if (getAddressesResponse.addresses != null) {
-        return getAddressesResponse.addresses!;
-      }
-      // Otherwise, make next request (if provided)
-      else if (getAddressesResponse.nextClientSideRequest != null) {
-        clientSideRequest = getAddressesResponse.nextClientSideRequest;
-      }
-      // If no addresses or next request, throw exception
-      else {
-        throw Exception(
-          "No addresses or next request provided for postcode '$postcode'.",
-        );
-      }
-    }
-  }
-
-  Future<List<BinDay>> getBinDays(Collector collector, Address address) async {
-    // Prepare URL to get addresses
-    var getBinDaysUrl = Uri.https(
-      authority,
-      "/${collector.govUkId}/binDays",
-      {},
+    // Assuming GetAddressesResponse always contains a list, even if empty.
+    // If it can be null, adjust the dataExtractor accordingly.
+    return await _fetchData<List<Address>, GetAddressesResponse>(
+      url: url,
+      responseParser: (json) => GetAddressesResponse.fromJson(json),
+      dataExtractor: (response) => response.addresses,
+      nextRequestExtractor: (response) => response.nextClientSideRequest,
+      errorMessage: "No addresses found for postcode '$postcode'.",
     );
+  }
 
-    // Store response for multi-step requests
-    ClientSideRequest? clientSideRequest;
+  /// Retrieves a list of [BinDay] for a given [Collector] and [Address].
+  ///
+  /// [collector] The collector for the address.
+  /// [address] The address to search for.
+  ///
+  /// Returns a list of [BinDay] objects.
+  /// Throws an [Exception] if the request fails or no bin days are found.
+  Future<List<BinDay>> getBinDays(Collector collector, Address address) async {
+    // Construct the path using the collector's ID
+    final String path = "/${collector.govUkId}/binDays";
+    final Uri url = Uri.https(authority, path);
 
-    // Send requests until bin days received
+    // For error message
+    final String addressString = _formatAddress(address);
+
+    // Assuming GetBinDaysResponse always contains a list, even if empty.
+    // If it can be null, adjust the dataExtractor accordingly.
+    return await _fetchData<List<BinDay>, GetBinDaysResponse>(
+      url: url,
+      responseParser: (json) => GetBinDaysResponse.fromJson(json),
+      dataExtractor: (response) => response.binDays,
+      nextRequestExtractor: (response) => response.nextClientSideRequest,
+      errorMessage:
+          "No bin days found for collector '${collector.name}' and address '$addressString'.",
+    );
+  }
+
+  /// Generic function to fetch data from the API, handling multi-step requests.
+  ///
+  /// [url] The initial URL to fetch data from.
+  /// [responseParser] Parses the JSON response into a response object [R].
+  /// [dataExtractor] Extracts the desired data [T] from the response object [R].
+  /// [nextRequestExtractor] Extracts the optional [ClientSideRequest] for the next step.
+  /// [errorMessage] Base error message if no data or next step is provided by the API.
+  ///
+  /// Returns the extracted data of type [T].
+  Future<T> _fetchData<T, R>({
+    required Uri url,
+    required R Function(dynamic json) responseParser,
+    required T? Function(R response) dataExtractor,
+    required ClientSideRequest? Function(R response) nextRequestExtractor,
+    required String errorMessage,
+  }) async {
+    // Result from the previous client-side request, if any.
+    ClientSideResponse? clientSideResponse;
+
     while (true) {
-      // Make client-side request if provided
-      ClientSideResponse? clientSideResponse;
-      if (clientSideRequest != null) {
-        clientSideResponse = await _sendClientSideRequest(clientSideRequest);
+      // Prepare body for the main API request. It includes the result
+      // of the previous client-side request, if one was performed.
+      String? requestBody;
+      if (clientSideResponse != null) {
+        requestBody = jsonEncode(clientSideResponse.toJson());
       }
 
-      // Prepare request to get bin days (may be multi-step)
-      var requestJson = clientSideResponse?.toJson();
-      var response = await httpClient.post(
-        getBinDaysUrl,
+      // Make the main POST request to our API endpoint
+      final http.Response response = await httpClient.post(
+        url,
         headers: {"Content-Type": "application/json"},
-        body: requestJson,
+        body: requestBody,
       );
 
-      // Validate response success
+      // Validate response status, throws if not successful
       response.isSuccessStatusCode();
 
-      // Parse response
-      var responseJson = jsonDecode(response.body);
-      var getBinDaysResponse = GetBinDaysResponse.fromJson(responseJson);
+      // Parse the main response
+      final dynamic responseJson = jsonDecode(response.body);
+      final R parsedResponse = responseParser(responseJson);
 
-      // If bin days were returned, exit
-      if (getBinDaysResponse.binDays != null) {
-        return getBinDaysResponse.binDays!;
+      // Try to extract the final data
+      final T? data = dataExtractor(parsedResponse);
+      if (data != null) {
+        // Data successfully retrieved, return it.
+        return data;
       }
-      // Otherwise, make next request (if provided)
-      else if (getBinDaysResponse.nextClientSideRequest != null) {
-        clientSideRequest = getBinDaysResponse.nextClientSideRequest;
-      }
-      // If no bin days or next request, throw exception
-      else {
-        var addressString = _formatAddress(address);
-        throw Exception(
-          "No bin days or next request provided for collector '${collector.name}' and address '$addressString'.",
-        );
+
+      // If no data, check if there's a next step (client-side request)
+      final ClientSideRequest? nextRequest = nextRequestExtractor(
+        parsedResponse,
+      );
+      if (nextRequest != null) {
+        // Perform the client-side request required by the API
+        clientSideResponse = await _sendClientSideRequest(nextRequest);
+        // Continue the loop to send the clientSideResponse back to the main API
+      } else {
+        // No data and no next step instruction, throw an error.
+        throw Exception(errorMessage);
       }
     }
   }
 
-  /// Sends a client-side request to the server.
+  /// Sends a client-side request as instructed by the main API.
   ///
-  /// [request] The client-side request to send.
+  /// [request] The client-side request details provided by the main API.
   ///
-  /// Returns a [ClientSideResponse] from the server.
+  /// Returns a [ClientSideResponse] parsed from the response.
   Future<ClientSideResponse> _sendClientSideRequest(
     ClientSideRequest request,
   ) async {
-    var response = await httpClient.post(
+    // The request object contains the full URL, headers, and body
+    // needed for this specific intermediate request.
+    final http.Response response = await httpClient.post(
       Uri.parse(request.url),
       headers: request.headers,
       body: request.body,
     );
 
-    // Validate response success
+    // Validate response status, throws if not successful
     response.isSuccessStatusCode();
 
     // Parse response
-    var responseJson = jsonDecode(response.body);
-    var clientSideResponse = ClientSideResponse.fromJson(responseJson);
-
-    return clientSideResponse;
+    final dynamic responseJson = jsonDecode(response.body);
+    return ClientSideResponse.fromJson(responseJson);
   }
 
   /// Formats an [Address] into a string representation.
@@ -203,13 +190,18 @@ class Client {
   /// Returns a string representation of the address, with non-null and
   /// non-empty parts joined by commas.
   String _formatAddress(Address address) {
-    var addressParts = [
+    final List<String?> addressParts = [
       address.property,
       address.street,
       address.town,
       address.postcode,
       address.uid,
-    ].where((part) => part != null && part.trim().isNotEmpty);
-    return addressParts.join(", ");
+    ];
+
+    final filteredAddressParts = addressParts.where(
+      (part) => part != null && part.trim().isNotEmpty,
+    );
+
+    return filteredAddressParts.join(", ");
   }
 }

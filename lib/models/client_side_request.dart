@@ -9,23 +9,18 @@ part 'client_side_request.g.dart';
 @JsonSerializable()
 class ClientSideRequest {
   /// Gets the request id.
-  @JsonKey(name: 'RequestId')
   final int requestId;
 
   /// Gets the URL of the request.
-  @JsonKey(name: 'Url')
   final String url;
 
   /// Gets the HTTP method of the request.
-  @JsonKey(name: 'Method')
   final String method;
 
   /// Gets the headers of the request.
-  @JsonKey(name: 'Headers')
   final Map<String, String> headers;
 
   /// Gets the body of the request.
-  @JsonKey(name: 'Body')
   final String body;
 
   /// Creates an instance of [ClientSideRequest].

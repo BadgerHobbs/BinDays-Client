@@ -8,18 +8,18 @@ part of 'client_side_request.dart';
 
 ClientSideRequest _$ClientSideRequestFromJson(Map<String, dynamic> json) =>
     ClientSideRequest(
-      requestId: (json['RequestId'] as num).toInt(),
-      url: json['Url'] as String,
-      method: json['Method'] as String,
-      headers: Map<String, String>.from(json['Headers'] as Map),
-      body: json['Body'] as String,
+      requestId: (json['requestId'] as num).toInt(),
+      url: json['url'] as String,
+      method: json['method'] as String,
+      headers: Map<String, String>.from(json['headers'] as Map),
+      body: json['body'] as String,
     );
 
 Map<String, dynamic> _$ClientSideRequestToJson(ClientSideRequest instance) =>
     <String, dynamic>{
-      'RequestId': instance.requestId,
-      'Url': instance.url,
-      'Method': instance.method,
-      'Headers': instance.headers,
-      'Body': instance.body,
+      'requestId': instance.requestId,
+      'url': instance.url,
+      'method': instance.method,
+      'headers': instance.headers,
+      'body': instance.body,
     };

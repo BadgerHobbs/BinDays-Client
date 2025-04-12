@@ -9,19 +9,15 @@ part 'bin.g.dart';
 @JsonSerializable()
 class Bin {
   /// Gets bin name.
-  @JsonKey(name: 'Name')
   final String name;
 
   /// Gets bin colour.
-  @JsonKey(name: 'Colour')
   final String colour;
 
   /// Gets bin type.
-  @JsonKey(name: 'Type')
   final String? type;
 
   /// Gets bin keys (identifiers).
-  @JsonKey(name: 'Keys')
   final List<String> keys;
 
   /// Creates an instance of [Bin].

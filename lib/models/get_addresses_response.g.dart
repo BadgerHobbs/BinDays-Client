@@ -10,13 +10,13 @@ GetAddressesResponse _$GetAddressesResponseFromJson(
   Map<String, dynamic> json,
 ) => GetAddressesResponse(
   nextClientSideRequest:
-      json['NextClientSideRequest'] == null
+      json['nextClientSideRequest'] == null
           ? null
           : ClientSideRequest.fromJson(
-            json['NextClientSideRequest'] as Map<String, dynamic>,
+            json['nextClientSideRequest'] as Map<String, dynamic>,
           ),
   addresses:
-      (json['Addresses'] as List<dynamic>?)
+      (json['addresses'] as List<dynamic>?)
           ?.map((e) => Address.fromJson(e as Map<String, dynamic>))
           .toList(),
 );
@@ -24,6 +24,6 @@ GetAddressesResponse _$GetAddressesResponseFromJson(
 Map<String, dynamic> _$GetAddressesResponseToJson(
   GetAddressesResponse instance,
 ) => <String, dynamic>{
-  'NextClientSideRequest': instance.nextClientSideRequest,
-  'Addresses': instance.addresses,
+  'nextClientSideRequest': instance.nextClientSideRequest,
+  'addresses': instance.addresses,
 };

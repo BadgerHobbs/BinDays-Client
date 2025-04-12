@@ -13,11 +13,9 @@ part 'get_collector_response.g.dart';
 @JsonSerializable()
 class GetCollectorResponse {
   /// Gets the next client-side request to be made.
-  @JsonKey(name: 'NextClientSideRequest')
   final ClientSideRequest? nextClientSideRequest;
 
   /// Gets the list of collector found.
-  @JsonKey(name: 'Collector')
   final Collector? collector;
 
   /// Creates an instance of [GetCollectorResponse].

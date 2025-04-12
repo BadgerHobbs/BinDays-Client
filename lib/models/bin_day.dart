@@ -22,15 +22,13 @@ String _dateToJson(DateTime date) => date.toIso8601String().substring(0, 10);
 @JsonSerializable()
 class BinDay {
   /// Gets bin day date.
-  @JsonKey(name: 'Date', fromJson: _dateFromJson, toJson: _dateToJson)
+  @JsonKey(fromJson: _dateFromJson, toJson: _dateToJson)
   final DateTime date;
 
   /// Gets bin day address.
-  @JsonKey(name: 'Address')
   final Address address;
 
   /// Gets bin day bins.
-  @JsonKey(name: 'Bins')
   final List<Bin> bins;
 
   /// Creates an instance of [BinDay].

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 // Internal Imports
 import 'package:package/extensions/http_response_extension.dart';
+import 'package:package/extensions/uri_extension.dart';
 import 'package:package/models/address.dart';
 import 'package:package/models/bin_day.dart';
 import 'package:package/models/client_side_request.dart';
@@ -18,25 +19,25 @@ import 'package:package/models/get_collector_response.dart';
 /// This class provides methods for retrieving collectors, addresses, and bin days
 /// from the BinDays API. It handles multi-step requests indicated by the API.
 class Client {
-  /// The authority (domain) of the BinDays API.
-  final String authority;
+  /// The base URL of the BinDays API.
+  final Uri baseUrl;
 
   /// The HTTP client used for making requests.
   final http.Client httpClient;
 
   /// Creates a new BinDays API client.
   ///
-  /// Requires the API [authority] (e.g. "api.bindays.app") and an
+  /// Requires the API [baseUrl] (e.g. "http://localhost:5042/api") and an
   /// [httpClient] instance. The caller is responsible for managing the
   /// lifecycle of the [httpClient] (including closing it).
-  Client(this.authority, this.httpClient);
+  Client(this.baseUrl, this.httpClient);
 
   /// Retrieves a list of all [Collector]s.
   ///
   /// Returns a list of [Collector] objects.
   /// Throws an [Exception] if the request fails or no collectors are found.
   Future<List<Collector>> getCollectors() async {
-    final url = Uri.https(authority, "/collectors");
+    final url = baseUrl.add('/collectors');
 
     // Get collectors from API endpoint
     final response = await httpClient.get(url);
@@ -62,7 +63,9 @@ class Client {
   /// Returns a [Collector] object.
   /// Throws an [Exception] if the request fails or no collector is found.
   Future<Collector> getCollector(String postcode) async {
-    final url = Uri.https(authority, "/collectors", {"postcode": postcode});
+    final url = baseUrl
+        .add('/collectors')
+        .replace(queryParameters: {"postcode": postcode});
 
     return await _fetchData<Collector, GetCollectorResponse>(
       url: url,
@@ -80,8 +83,13 @@ class Client {
   ///
   /// Returns a list of [Address] objects.
   /// Throws an [Exception] if the request fails or no addresses are found.
-  Future<List<Address>> getAddresses(Collector collector, String postcode) async {
-    final url = Uri.https(authority, "/${collector.govUkId}/addresses", {"postcode": postcode});
+  Future<List<Address>> getAddresses(
+    Collector collector,
+    String postcode,
+  ) async {
+    final url = baseUrl
+        .add('${collector.govUkId}/addresses')
+        .replace(queryParameters: {"postcode": postcode});
 
     return await _fetchData<List<Address>, GetAddressesResponse>(
       url: url,
@@ -101,8 +109,7 @@ class Client {
   /// Throws an [Exception] if the request fails or no bin days are found.
   Future<List<BinDay>> getBinDays(Collector collector, Address address) async {
     // Construct the path using the collector's ID
-    final path = "/${collector.govUkId}/binDays";
-    final url = Uri.https(authority, path);
+    final url = baseUrl.add("/${collector.govUkId}/binDays");
 
     // For verbose error message
     final addressString = _formatAddress(address);
@@ -188,8 +195,9 @@ class Client {
   ) async {
     // The request object contains the full URL, headers, and body
     // needed for this specific intermediate request.
+    final url = Uri.parse(request.url);
     final response = await httpClient.post(
-      Uri.parse(request.url),
+      url,
       headers: request.headers,
       body: request.body,
     );

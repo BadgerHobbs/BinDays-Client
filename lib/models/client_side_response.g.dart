@@ -8,18 +8,18 @@ part of 'client_side_response.dart';
 
 ClientSideResponse _$ClientSideResponseFromJson(Map<String, dynamic> json) =>
     ClientSideResponse(
-      requestId: (json['RequestId'] as num).toInt(),
-      statusCode: (json['StatusCode'] as num).toInt(),
-      headers: Map<String, String>.from(json['Headers'] as Map),
-      content: json['Content'] as String,
-      reasonPhrase: json['ReasonPhrase'] as String,
+      requestId: (json['requestId'] as num).toInt(),
+      statusCode: (json['statusCode'] as num).toInt(),
+      headers: Map<String, String>.from(json['headers'] as Map),
+      content: json['content'] as String,
+      reasonPhrase: json['reasonPhrase'] as String,
     );
 
 Map<String, dynamic> _$ClientSideResponseToJson(ClientSideResponse instance) =>
     <String, dynamic>{
-      'RequestId': instance.requestId,
-      'StatusCode': instance.statusCode,
-      'Headers': instance.headers,
-      'Content': instance.content,
-      'ReasonPhrase': instance.reasonPhrase,
+      'requestId': instance.requestId,
+      'statusCode': instance.statusCode,
+      'headers': instance.headers,
+      'content': instance.content,
+      'reasonPhrase': instance.reasonPhrase,
     };

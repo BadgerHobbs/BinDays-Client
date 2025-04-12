@@ -13,11 +13,9 @@ part 'get_addresses_response.g.dart';
 @JsonSerializable()
 class GetAddressesResponse {
   /// Gets the next client-side request to be made.
-  @JsonKey(name: 'NextClientSideRequest')
   final ClientSideRequest? nextClientSideRequest;
 
   /// Gets the list of addresses found.
-  @JsonKey(name: 'Addresses')
   final List<Address>? addresses;
 
   /// Creates an instance of [GetAddressesResponse].

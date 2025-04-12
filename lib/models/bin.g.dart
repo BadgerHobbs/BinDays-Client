@@ -7,15 +7,15 @@ part of 'bin.dart';
 // **************************************************************************
 
 Bin _$BinFromJson(Map<String, dynamic> json) => Bin(
-  name: json['Name'] as String,
-  colour: json['Colour'] as String,
-  type: json['Type'] as String?,
-  keys: (json['Keys'] as List<dynamic>).map((e) => e as String).toList(),
+  name: json['name'] as String,
+  colour: json['colour'] as String,
+  type: json['type'] as String?,
+  keys: (json['keys'] as List<dynamic>).map((e) => e as String).toList(),
 );
 
 Map<String, dynamic> _$BinToJson(Bin instance) => <String, dynamic>{
-  'Name': instance.name,
-  'Colour': instance.colour,
-  'Type': instance.type,
-  'Keys': instance.keys,
+  'name': instance.name,
+  'colour': instance.colour,
+  'type': instance.type,
+  'keys': instance.keys,
 };

@@ -9,23 +9,18 @@ part 'address.g.dart';
 @JsonSerializable()
 class Address {
   /// Gets address property.
-  @JsonKey(name: 'Property')
   final String? property;
 
   /// Gets address street.
-  @JsonKey(name: 'Street')
   final String? street;
 
   /// Gets address town.
-  @JsonKey(name: 'Town')
   final String? town;
 
   /// Gets address postcode.
-  @JsonKey(name: 'Postcode')
   final String? postcode;
 
   /// Gets address uid.
-  @JsonKey(name: 'Uid')
   final String? uid;
 
   /// Creates an instance of [Address].

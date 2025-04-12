@@ -13,11 +13,9 @@ part 'get_bin_days_response.g.dart';
 @JsonSerializable()
 class GetBinDaysResponse {
   /// Gets the next client-side request to be made.
-  @JsonKey(name: 'NextClientSideRequest')
   final ClientSideRequest? nextClientSideRequest;
 
   /// Gets the list of bin days found.
-  @JsonKey(name: 'BinDays')
   final List<BinDay>? binDays;
 
   /// Creates an instance of [GetBinDaysResponse].

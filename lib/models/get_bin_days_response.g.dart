@@ -9,19 +9,19 @@ part of 'get_bin_days_response.dart';
 GetBinDaysResponse _$GetBinDaysResponseFromJson(Map<String, dynamic> json) =>
     GetBinDaysResponse(
       nextClientSideRequest:
-          json['NextClientSideRequest'] == null
+          json['nextClientSideRequest'] == null
               ? null
               : ClientSideRequest.fromJson(
-                json['NextClientSideRequest'] as Map<String, dynamic>,
+                json['nextClientSideRequest'] as Map<String, dynamic>,
               ),
       binDays:
-          (json['BinDays'] as List<dynamic>?)
+          (json['binDays'] as List<dynamic>?)
               ?.map((e) => BinDay.fromJson(e as Map<String, dynamic>))
               .toList(),
     );
 
 Map<String, dynamic> _$GetBinDaysResponseToJson(GetBinDaysResponse instance) =>
     <String, dynamic>{
-      'NextClientSideRequest': instance.nextClientSideRequest,
-      'BinDays': instance.binDays,
+      'nextClientSideRequest': instance.nextClientSideRequest,
+      'binDays': instance.binDays,
     };

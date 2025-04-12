@@ -7,15 +7,15 @@ part of 'collector.dart';
 // **************************************************************************
 
 Collector _$CollectorFromJson(Map<String, dynamic> json) => Collector(
-  name: json['Name'] as String?,
-  websiteUrl: _uriFromJson(json['WebsiteUrl'] as String?),
-  govUkId: json['GovUkId'] as String?,
-  govUkUrl: _uriFromJson(json['GovUkUrl'] as String?),
+  name: json['name'] as String,
+  websiteUrl: _uriFromJson(json['websiteUrl'] as String),
+  govUkId: json['govUkId'] as String,
+  govUkUrl: _uriFromJson(json['govUkUrl'] as String),
 );
 
 Map<String, dynamic> _$CollectorToJson(Collector instance) => <String, dynamic>{
-  'Name': instance.name,
-  'WebsiteUrl': _uriToJson(instance.websiteUrl),
-  'GovUkId': instance.govUkId,
-  'GovUkUrl': _uriToJson(instance.govUkUrl),
+  'name': instance.name,
+  'websiteUrl': _uriToJson(instance.websiteUrl),
+  'govUkId': instance.govUkId,
+  'govUkUrl': _uriToJson(instance.govUkUrl),
 };

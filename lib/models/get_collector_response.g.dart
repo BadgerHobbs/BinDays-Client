@@ -10,20 +10,20 @@ GetCollectorResponse _$GetCollectorResponseFromJson(
   Map<String, dynamic> json,
 ) => GetCollectorResponse(
   nextClientSideRequest:
-      json['NextClientSideRequest'] == null
+      json['nextClientSideRequest'] == null
           ? null
           : ClientSideRequest.fromJson(
-            json['NextClientSideRequest'] as Map<String, dynamic>,
+            json['nextClientSideRequest'] as Map<String, dynamic>,
           ),
   collector:
-      json['Collector'] == null
+      json['collector'] == null
           ? null
-          : Collector.fromJson(json['Collector'] as Map<String, dynamic>),
+          : Collector.fromJson(json['collector'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$GetCollectorResponseToJson(
   GetCollectorResponse instance,
 ) => <String, dynamic>{
-  'NextClientSideRequest': instance.nextClientSideRequest,
-  'Collector': instance.collector,
+  'nextClientSideRequest': instance.nextClientSideRequest,
+  'collector': instance.collector,
 };

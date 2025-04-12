@@ -9,23 +9,18 @@ part 'client_side_response.g.dart';
 @JsonSerializable()
 class ClientSideResponse {
   /// Gets the request id.
-  @JsonKey(name: 'RequestId')
   final int requestId;
 
   /// Gets the HTTP status code of the response.
-  @JsonKey(name: 'StatusCode')
   final int statusCode;
 
   /// Gets the headers of the response.
-  @JsonKey(name: 'Headers')
   final Map<String, String> headers;
 
   /// Gets the content of the response as a string.
-  @JsonKey(name: 'Content')
   final String content;
 
   /// Gets the reason phrase of the response.
-  @JsonKey(name: 'ReasonPhrase')
   final String reasonPhrase;
 
   /// Creates an instance of [ClientSideResponse].

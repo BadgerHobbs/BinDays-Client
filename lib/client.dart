@@ -58,8 +58,6 @@ class Client {
   Future<List<Address>> getAddresses(String postcode) async {
     final url = Uri.https(authority, "/addresses", {"postcode": postcode});
 
-    // Assuming GetAddressesResponse always contains a list, even if empty.
-    // If it can be null, adjust the dataExtractor accordingly.
     return await _fetchData<List<Address>, GetAddressesResponse>(
       url: url,
       responseParser: (json) => GetAddressesResponse.fromJson(json),
@@ -81,11 +79,9 @@ class Client {
     final path = "/${collector.govUkId}/binDays";
     final url = Uri.https(authority, path);
 
-    // For error message
+    // For verbose error message
     final addressString = _formatAddress(address);
 
-    // Assuming GetBinDaysResponse always contains a list, even if empty.
-    // If it can be null, adjust the dataExtractor accordingly.
     return await _fetchData<List<BinDay>, GetBinDaysResponse>(
       url: url,
       responseParser: (json) => GetBinDaysResponse.fromJson(json),

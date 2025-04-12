@@ -31,6 +31,30 @@ class Client {
   /// lifecycle of the [httpClient] (including closing it).
   Client(this.authority, this.httpClient);
 
+  /// Retrieves a list of all [Collector]s.
+  ///
+  /// Returns a list of [Collector] objects.
+  /// Throws an [Exception] if the request fails or no collectors are found.
+  Future<List<Collector>> getCollectors() async {
+    final url = Uri.https(authority, "/collectors");
+
+    // Get collectors from API endpoint
+    final response = await httpClient.get(url);
+
+    // Validate response status, throws if not successful
+    response.isSuccessStatusCode();
+
+    // Parse and return response
+    final responseJson = jsonDecode(response.body);
+
+    List<Collector> collectors = [];
+    for (dynamic collectorJson in responseJson) {
+      collectors.add(Collector.fromJson(collectorJson));
+    }
+
+    return collectors;
+  }
+
   /// Retrieves a [Collector] for a given postcode.
   ///
   /// [postcode] The postcode to search for.

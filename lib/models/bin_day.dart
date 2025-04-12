@@ -8,10 +8,13 @@ import 'bin.dart';
 
 part 'bin_day.g.dart';
 
-// Helper function to handle DateOnly (YYYY-MM-DD) format if needed.
-// Kept here as it's only used by BinDay in this example.
+/// Helper function to handle DateOnly (YYYY-MM-DD) format if needed.
+/// Converts a date string (YYYY-MM-DD) to a DateTime object.
 DateTime _dateFromJson(String dateStr) =>
     DateTime.parse('${dateStr}T00:00:00Z');
+
+/// Helper function to handle DateOnly (YYYY-MM-DD) format if needed.
+/// Converts a DateTime object to a date string (YYYY-MM-DD).
 String _dateToJson(DateTime date) => date.toIso8601String().substring(0, 10);
 
 /// Model which represents a bin day for a given collector.

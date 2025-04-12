@@ -1,9 +1,8 @@
 // External Imports
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart' as dio;
+import 'package:package/extensions/dio_response_extension.dart';
 
 // Internal Imports
-import 'package:package/extensions/http_response_extension.dart';
 import 'package:package/extensions/uri_extension.dart';
 import 'package:package/models/address.dart';
 import 'package:package/models/bin_day.dart';
@@ -23,7 +22,7 @@ class Client {
   final Uri baseUrl;
 
   /// The HTTP client used for making requests.
-  final http.Client httpClient;
+  final dio.Dio httpClient;
 
   /// Creates a new BinDays API client.
   ///
@@ -40,13 +39,13 @@ class Client {
     final url = baseUrl.add('/collectors');
 
     // Get collectors from API endpoint
-    final response = await httpClient.get(url);
+    final response = await httpClient.getUri(url);
 
     // Validate response status, throws if not successful
     response.isSuccessStatusCode();
 
     // Parse and return response
-    final responseJson = jsonDecode(response.body);
+    final responseJson = response.data;
 
     List<Collector> collectors = [];
     for (dynamic collectorJson in responseJson) {
@@ -64,7 +63,7 @@ class Client {
   /// Throws an [Exception] if the request fails or no collector is found.
   Future<Collector> getCollector(String postcode) async {
     final url = baseUrl
-        .add('/collectors')
+        .add('/collector')
         .replace(queryParameters: {"postcode": postcode});
 
     return await _fetchData<Collector, GetCollectorResponse>(
@@ -146,24 +145,23 @@ class Client {
     while (true) {
       // Prepare body for the main API request. It includes the result
       // of the previous client-side request, if one was performed.
-      String? requestBody;
+      dynamic requestBody;
       if (clientSideResponse != null) {
-        requestBody = jsonEncode(clientSideResponse.toJson());
+        requestBody = clientSideResponse.toJson();
       }
 
       // Make the main POST request to our API endpoint
-      final response = await httpClient.post(
+      final response = await httpClient.postUri(
         url,
-        headers: {"Content-Type": "application/json"},
-        body: requestBody,
+        data: requestBody,
+        options: dio.Options(contentType: 'application/json'),
       );
 
       // Validate response status, throws if not successful
       response.isSuccessStatusCode();
 
       // Parse the main response
-      final responseJson = jsonDecode(response.body);
-      final parsedResponse = responseParser(responseJson);
+      final parsedResponse = responseParser(response.data);
 
       // Try to extract the final data
       final data = dataExtractor(parsedResponse);
@@ -193,21 +191,35 @@ class Client {
   Future<ClientSideResponse> _sendClientSideRequest(
     ClientSideRequest request,
   ) async {
-    // The request object contains the full URL, headers, and body
-    // needed for this specific intermediate request.
-    final url = Uri.parse(request.url);
-    final response = await httpClient.post(
-      url,
-      headers: request.headers,
-      body: request.body,
+    // Send request
+    var response = await httpClient.request(
+      request.url,
+      data: request.body,
+      options: dio.Options(
+        method: request.method,
+        headers: request.headers,
+        followRedirects: true,
+        validateStatus: (status) => true,
+      ),
     );
 
     // Validate response status, throws if not successful
     response.isSuccessStatusCode();
 
-    // Parse response
-    final responseJson = jsonDecode(response.body);
-    return ClientSideResponse.fromJson(responseJson);
+    // Create response object
+    var clientSideResponse = ClientSideResponse(
+      requestId: request.requestId,
+      statusCode: response.statusCode ?? 0,
+      headers: response.headers.map.map((key, value) {
+        // Flatten the list of strings to a single string, comma-separated
+        final headerValue = value.join(',');
+        return MapEntry(key, headerValue);
+      }),
+      content: response.data.toString(),
+      reasonPhrase: response.statusMessage ?? "",
+    );
+
+    return clientSideResponse;
   }
 
   /// Formats an [Address] into a string representation.

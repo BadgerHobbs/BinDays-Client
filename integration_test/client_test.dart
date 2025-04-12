@@ -1,5 +1,5 @@
 // External Imports
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
 // Internal Imports
@@ -10,12 +10,17 @@ void main() {
 
   setUp(() {
     final baseUrl = Uri.parse("http://localhost:5042");
-    final httpClient = http.Client();
+    final httpClient = Dio();
     client = Client(baseUrl, httpClient);
   });
 
   test('getCollectors', () async {
     var collectors = await client.getCollectors();
     expect(collectors.length, greaterThan(0));
+  });
+
+  test('getCollector', () async {
+    var collector = await client.getCollector("EX20 1ZF");
+    expect(collector.name, isNotNull);
   });
 }

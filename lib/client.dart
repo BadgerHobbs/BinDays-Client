@@ -76,11 +76,12 @@ class Client {
   /// Retrieves a list of [Address] for a given postcode.
   ///
   /// [postcode] The postcode to search for.
+  /// [collector] The collector for the postcode.
   ///
   /// Returns a list of [Address] objects.
   /// Throws an [Exception] if the request fails or no addresses are found.
-  Future<List<Address>> getAddresses(String postcode) async {
-    final url = Uri.https(authority, "/addresses", {"postcode": postcode});
+  Future<List<Address>> getAddresses(Collector collector, String postcode) async {
+    final url = Uri.https(authority, "/${collector.govUkId}/addresses", {"postcode": postcode});
 
     return await _fetchData<List<Address>, GetAddressesResponse>(
       url: url,

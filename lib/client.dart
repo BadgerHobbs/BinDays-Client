@@ -38,7 +38,7 @@ class Client {
   /// Returns a [Collector] object.
   /// Throws an [Exception] if the request fails or no collector is found.
   Future<Collector> getCollector(String postcode) async {
-    final Uri url = Uri.https(authority, "/collectors", {"postcode": postcode});
+    final url = Uri.https(authority, "/collectors", {"postcode": postcode});
 
     return await _fetchData<Collector, GetCollectorResponse>(
       url: url,
@@ -56,7 +56,7 @@ class Client {
   /// Returns a list of [Address] objects.
   /// Throws an [Exception] if the request fails or no addresses are found.
   Future<List<Address>> getAddresses(String postcode) async {
-    final Uri url = Uri.https(authority, "/addresses", {"postcode": postcode});
+    final url = Uri.https(authority, "/addresses", {"postcode": postcode});
 
     // Assuming GetAddressesResponse always contains a list, even if empty.
     // If it can be null, adjust the dataExtractor accordingly.
@@ -78,11 +78,11 @@ class Client {
   /// Throws an [Exception] if the request fails or no bin days are found.
   Future<List<BinDay>> getBinDays(Collector collector, Address address) async {
     // Construct the path using the collector's ID
-    final String path = "/${collector.govUkId}/binDays";
-    final Uri url = Uri.https(authority, path);
+    final path = "/${collector.govUkId}/binDays";
+    final url = Uri.https(authority, path);
 
     // For error message
-    final String addressString = _formatAddress(address);
+    final addressString = _formatAddress(address);
 
     // Assuming GetBinDaysResponse always contains a list, even if empty.
     // If it can be null, adjust the dataExtractor accordingly.
@@ -124,7 +124,7 @@ class Client {
       }
 
       // Make the main POST request to our API endpoint
-      final http.Response response = await httpClient.post(
+      final response = await httpClient.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: requestBody,
@@ -134,20 +134,18 @@ class Client {
       response.isSuccessStatusCode();
 
       // Parse the main response
-      final dynamic responseJson = jsonDecode(response.body);
-      final R parsedResponse = responseParser(responseJson);
+      final responseJson = jsonDecode(response.body);
+      final parsedResponse = responseParser(responseJson);
 
       // Try to extract the final data
-      final T? data = dataExtractor(parsedResponse);
+      final data = dataExtractor(parsedResponse);
       if (data != null) {
         // Data successfully retrieved, return it.
         return data;
       }
 
       // If no data, check if there's a next step (client-side request)
-      final ClientSideRequest? nextRequest = nextRequestExtractor(
-        parsedResponse,
-      );
+      final nextRequest = nextRequestExtractor(parsedResponse);
       if (nextRequest != null) {
         // Perform the client-side request required by the API
         clientSideResponse = await _sendClientSideRequest(nextRequest);
@@ -169,7 +167,7 @@ class Client {
   ) async {
     // The request object contains the full URL, headers, and body
     // needed for this specific intermediate request.
-    final http.Response response = await httpClient.post(
+    final response = await httpClient.post(
       Uri.parse(request.url),
       headers: request.headers,
       body: request.body,
@@ -179,7 +177,7 @@ class Client {
     response.isSuccessStatusCode();
 
     // Parse response
-    final dynamic responseJson = jsonDecode(response.body);
+    final responseJson = jsonDecode(response.body);
     return ClientSideResponse.fromJson(responseJson);
   }
 
@@ -190,7 +188,7 @@ class Client {
   /// Returns a string representation of the address, with non-null and
   /// non-empty parts joined by commas.
   String _formatAddress(Address address) {
-    final List<String?> addressParts = [
+    final addressParts = [
       address.property,
       address.street,
       address.town,

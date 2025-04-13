@@ -26,10 +26,13 @@ class Client {
 
   /// Creates a new BinDays API client.
   ///
-  /// Requires the API [baseUrl] (e.g. "http://localhost:5042/api") and an
-  /// [httpClient] instance. The caller is responsible for managing the
-  /// lifecycle of the [httpClient] (including closing it).
-  Client(this.baseUrl, this.httpClient);
+  /// Requires the API [baseUrl] (e.g. "http://localhost:5042/api").
+  /// An optional [httpClient] instance can be provided. If not provided, a
+  /// default [dio.Dio] instance will be created. The caller is responsible
+  /// for managing the lifecycle of the [httpClient] (including closing it)
+  /// if they provide it.
+  Client(this.baseUrl, [dio.Dio? httpClient])
+    : httpClient = httpClient ?? dio.Dio();
 
   /// Retrieves a list of all [Collector]s.
   ///

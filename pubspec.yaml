@@ -1,5 +1,5 @@
-name: package
-description: A sample command-line application.
+name: bindays_client
+description: Client library for the BinDays API.
 version: 1.0.0
 # repository: https://github.com/my_org/my_repo
 environment:

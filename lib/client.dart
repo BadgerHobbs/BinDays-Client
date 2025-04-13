@@ -1,17 +1,17 @@
 // External Imports
 import 'package:dio/dio.dart' as dio;
-import 'package:package/extensions/dio_response_extension.dart';
+import 'package:bindays_client/extensions/dio_response_extension.dart';
 
 // Internal Imports
-import 'package:package/extensions/uri_extension.dart';
-import 'package:package/models/address.dart';
-import 'package:package/models/bin_day.dart';
-import 'package:package/models/client_side_request.dart';
-import 'package:package/models/client_side_response.dart';
-import 'package:package/models/collector.dart';
-import 'package:package/models/get_addresses_response.dart';
-import 'package:package/models/get_bin_days_response.dart';
-import 'package:package/models/get_collector_response.dart';
+import 'package:bindays_client/extensions/uri_extension.dart';
+import 'package:bindays_client/models/address.dart';
+import 'package:bindays_client/models/bin_day.dart';
+import 'package:bindays_client/models/client_side_request.dart';
+import 'package:bindays_client/models/client_side_response.dart';
+import 'package:bindays_client/models/collector.dart';
+import 'package:bindays_client/models/get_addresses_response.dart';
+import 'package:bindays_client/models/get_bin_days_response.dart';
+import 'package:bindays_client/models/get_collector_response.dart';
 
 /// A client for interacting with the BinDays API.
 ///

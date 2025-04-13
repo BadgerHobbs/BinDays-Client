@@ -107,14 +107,11 @@ class Client {
   /// Returns a list of [BinDay] objects.
   /// Throws an [Exception] if the request fails or no bin days are found.
   Future<List<BinDay>> getBinDays(Collector collector, Address address) async {
-    // Construct the path using the collector's ID
-    final url = baseUrl.add("/${collector.govUkId}/binDays");
-
-    // Add postcode and uid as query parameters
-    url.queryParameters.addAll({
-      "postcode": address.postcode!,
-      "uid": address.uid!,
-    });
+    final url = baseUrl
+        .add("/${collector.govUkId}/bin-days")
+        .replace(
+          queryParameters: {"postcode": address.postcode!, "uid": address.uid!},
+        );
 
     // For verbose error message
     final addressString = _formatAddress(address);

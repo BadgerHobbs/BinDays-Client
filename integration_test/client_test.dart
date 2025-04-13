@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
 // Internal Imports
-import 'package:package/client.dart';
+import 'package:bindays_client/client.dart';
 
 void main() {
   late Client client;

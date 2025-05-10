@@ -9,7 +9,7 @@ void main() {
   late Client client;
 
   setUp(() {
-    final baseUrl = Uri.parse("http://localhost:5042");
+    final baseUrl = Uri.parse("https://api.bindays.app");
     final httpClient = Dio();
     client = Client(baseUrl, httpClient);
   });

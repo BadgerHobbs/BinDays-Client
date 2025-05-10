@@ -206,6 +206,7 @@ class Client {
         headers: request.headers,
         followRedirects: true,
         validateStatus: (status) => true,
+        responseType: dio.ResponseType.plain,
       ),
     );
 

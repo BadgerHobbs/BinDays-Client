@@ -1,9 +1,5 @@
 # BinDays-Client
 
-Client BinDays mobile app designed to communicate with the BinDays-API.
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-Update code generated json serialisation.
-
-```
-dart run build_runner build -d
-```
+![d2(5)](https://github.com/user-attachments/assets/92fa516e-bcba-4aa6-8062-0263c42c00e7)

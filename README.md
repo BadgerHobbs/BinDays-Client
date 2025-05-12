@@ -2,4 +2,4 @@
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-![d2(5)](https://github.com/user-attachments/assets/92fa516e-bcba-4aa6-8062-0263c42c00e7)
+![d2](https://github.com/user-attachments/assets/c9dccc4d-eec1-4de5-b0e7-3e6767d66409)

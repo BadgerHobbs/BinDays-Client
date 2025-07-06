@@ -210,6 +210,9 @@ class Client {
       ),
     );
 
+    // Handle any POST request redirects
+    response = await _handleRedirect(response, request);
+
     // Validate response status, throws if not successful
     response.isSuccessStatusCode();
 
@@ -249,5 +252,60 @@ class Client {
     );
 
     return filteredAddressParts.join(", ");
+  }
+
+  /// Handles HTTP redirects (301 and 302) for POST requests to GET requests.
+  ///
+  /// This is necessary because Dio's `followRedirects` option does not
+  /// automatically handle redirects for POST requests by performing a GET
+  /// request to the new location.
+  ///
+  /// See documentation:
+  /// https://api.flutter.dev/flutter/dart-io/HttpClientRequest/followRedirects.html
+  ///
+  /// [response] The original HTTP response.
+  /// [request] The original client-side request that led to this response.
+  ///
+  /// Returns the response from the redirected request if a redirect occurred
+  /// and was handled, otherwise returns the original response.
+  Future<dio.Response<dynamic>> _handleRedirect(
+    dio.Response<dynamic> response,
+    ClientSideRequest request,
+  ) async {
+    // Return original response if not POST request
+    if (response.requestOptions.method != 'POST') {
+      return response;
+    }
+
+    // Return original response if status code is not redirect (301, 302)
+    if (![301, 302].contains(response.statusCode)) {
+      return response;
+    }
+
+    // Get location from response header, return if does not exist
+    final location = response.headers.value('location');
+    if (location == null) {
+      return response;
+    }
+
+    // Parse location, converting to absolute if relative
+    var redirectUri = Uri.tryParse(location);
+    if (redirectUri == null) {
+      return response;
+    } else if (!redirectUri.isAbsolute) {
+      redirectUri = response.requestOptions.uri.resolveUri(redirectUri);
+    }
+
+    // Send redirected GET request, using original request headers
+    var redirectResponse = await httpClient.getUri(
+      redirectUri,
+      options: dio.Options(
+        headers: request.headers,
+        followRedirects: true,
+        validateStatus: (status) => true,
+      ),
+    );
+
+    return redirectResponse;
   }
 }

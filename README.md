@@ -2,53 +2,49 @@
 
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-![d2](https://github.com/user-attachments/assets/c9dccc4d-eec1-4de5-b0e7-3e6767d66409)
-
 <p align="center">
   <a href="https://github.com/BadgerHobbs/BinDays-App">BinDays-App</a> •
   <a href="https://github.com/BadgerHobbs/BinDays-Client">BinDays-Client</a> •
   <a href="https://github.com/BadgerHobbs/BinDays-API">BinDays-API</a>
 </p>
 
-## Welcome!
-
-Got an issue with a council or want one added? Head to the [BinDays-API](https://github.com/BadgerHobbs/BinDays-API) repository. Otherwise, please read onwards.
+> **Council-related issue?** For problems with a specific council's bin collection data or to request a new council, please open an issue in the [**BinDays-API repository**](https://github.com/BadgerHobbs/BinDays-API/issues).
 
 ## Overview
 
-You are currently viewing the repository for the BinDays-Client, with is the client library the [BinDays-App](https://github.com/BadgerHobbs/BinDays-App) uses interact with the [BinDays-API](https://github.com/BadgerHobbs/BinDays-API).
+This is the repository for the BinDays-Client, a Dart library that facilitates communication between a client application (like the [BinDays-App](https://github.com/BadgerHobbs/BinDays-App)) and the [BinDays-API](https://github.com/BadgerHobbs/BinDays-API).
 
-## Design
-
-The design of the BinDays-Client library is relativly simple. Essentially the client makes a request to the BinDays-API attempting to fetch some data (e.g. collectors, addresses, bin days), and the API returns a request which the client must process. The response is then sent back to the API for processing, either returning the final result or another request to make (and the cycle continues).
+Its primary purpose is to handle the request-response cycle for fetching bin collection data.
 
 ## Usage
 
-Below is some basic usage for the client library, you can also find anothe rexample in the `client_test.dart` file in the repository.
+Here is a basic example of how to use the client:
 
 ```dart
-// Import the library, and the Dio http client
-import 'package:bindays_client/client.dart';
-import 'package:dio/dio.dart';
+import 'package:bindays_client/bindays_client.dart';
 
-// Configure the client with the API url.
-final baseUrl = Uri.parse("https://api.bindays.app");
-final httpClient = Dio();
-client = Client(baseUrl, httpClient);
+void main() async {
+  // Configure the client
+  final client = BinDaysClient(
+    apiHost: 'https://bindays-api.example.com',
+  );
 
-// Get the currently supported collectors
-var collectors = await client.getCollectors();
+  // Get the collector for a postcode
+  final collector = await client.getCollector('SW1A 0AA');
 
-// Get a specific collector for a given postcode.
-var collector = await client.getCollector("BN14 9NS");
+  // Get addresses for the postcode
+  final addresses = await client.getAddresses(collector, 'SW1A 0AA');
 
-// Get the addresses for the postcode and collector.
-var addresses = await client.getAddresses(collector, "BN14 9NS");
+  // Get bin days for the selected address
+  final binDays = await client.getBinDays(collector, addresses.first);
 
-// Get the bin collections for the address.
-var binDays = await client.getBinDays(collector, addresses.first);
+  // Print the bin days
+  for (final binDay in binDays) {
+    print('${binDay.name}: ${binDay.date}');
+  }
+}
 ```
 
 ## License
 
-The code and documentation in this project are released under the [GPLv3 License](LICENSE).
+This project is licensed under the [GPLv3 License](LICENSE).

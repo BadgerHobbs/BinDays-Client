@@ -204,14 +204,16 @@ class Client {
       options: dio.Options(
         method: request.method,
         headers: request.headers,
-        followRedirects: true,
+        followRedirects: request.options.followRedirects,
         validateStatus: (status) => true,
         responseType: dio.ResponseType.plain,
       ),
     );
 
     // Handle any POST request redirects
-    response = await _handleRedirect(response, request);
+    if (request.options.followRedirects) {
+      response = await _handleRedirect(response, request);
+    }
 
     // Validate response status, throws if not successful
     response.isSuccessStatusCode();
@@ -227,6 +229,7 @@ class Client {
       }),
       content: response.data.toString(),
       reasonPhrase: response.statusMessage ?? "",
+      options: request.options,
     );
 
     return clientSideResponse;
@@ -301,7 +304,7 @@ class Client {
       redirectUri,
       options: dio.Options(
         headers: request.headers,
-        followRedirects: true,
+        followRedirects: request.options.followRedirects,
         validateStatus: (status) => true,
       ),
     );

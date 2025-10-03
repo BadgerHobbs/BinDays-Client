@@ -24,7 +24,7 @@ class ClientSideRequest {
   final Map<String, String> headers;
 
   /// Gets the body of the request.
-  final String body;
+  final String? body;
 
   /// Gets the options of the request.
   final ClientSideOptions options;

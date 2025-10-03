@@ -12,7 +12,7 @@ ClientSideRequest _$ClientSideRequestFromJson(Map<String, dynamic> json) =>
       url: json['url'] as String,
       method: json['method'] as String,
       headers: Map<String, String>.from(json['headers'] as Map),
-      body: json['body'] as String,
+      body: json['body'] as String?,
       options:
           json['options'] == null
               ? const ClientSideOptions()

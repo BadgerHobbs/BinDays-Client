@@ -2,6 +2,9 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
+// Internal Imports
+import 'client_side_options.dart';
+
 part 'client_side_response.g.dart';
 
 /// Model which represents a HTTP response from a request executed client-side.
@@ -23,6 +26,9 @@ class ClientSideResponse {
   /// Gets the reason phrase of the response.
   final String reasonPhrase;
 
+  /// Gets the options of the response.
+  final ClientSideOptions options;
+
   /// Creates an instance of [ClientSideResponse].
   const ClientSideResponse({
     required this.requestId,
@@ -30,6 +36,7 @@ class ClientSideResponse {
     required this.headers,
     required this.content,
     required this.reasonPhrase,
+    this.options = const ClientSideOptions(),
   });
 
   /// Gets a value indicating whether the request was successful (status code 200-299).

@@ -2,6 +2,9 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:meta/meta.dart';
 
+// Internal Imports
+import 'client_side_options.dart';
+
 part 'client_side_request.g.dart';
 
 /// Model which represents a HTTP request executed client-side.
@@ -23,6 +26,9 @@ class ClientSideRequest {
   /// Gets the body of the request.
   final String body;
 
+  /// Gets the options of the request.
+  final ClientSideOptions options;
+
   /// Creates an instance of [ClientSideRequest].
   const ClientSideRequest({
     required this.requestId,
@@ -30,6 +36,7 @@ class ClientSideRequest {
     required this.method,
     required this.headers,
     required this.body,
+    this.options = const ClientSideOptions(),
   });
 
   /// Creates a [ClientSideRequest] from its JSON representation.

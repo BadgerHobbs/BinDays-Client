@@ -1,4 +1,6 @@
 // External Imports
+import 'dart:io';
+import 'package:dio/io.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:bindays_client/extensions/dio_response_extension.dart';
 
@@ -22,7 +24,7 @@ class Client {
   final Uri baseUrl;
 
   /// The HTTP client used for making requests.
-  final dio.Dio httpClient;
+  late dio.Dio httpClient;
 
   /// Creates a new BinDays API client.
   ///
@@ -31,8 +33,22 @@ class Client {
   /// default [dio.Dio] instance will be created. The caller is responsible
   /// for managing the lifecycle of the [httpClient] (including closing it)
   /// if they provide it.
-  Client(this.baseUrl, [dio.Dio? httpClient])
-    : httpClient = httpClient ?? dio.Dio();
+  Client(this.baseUrl, [dio.Dio? httpClient]) {
+    this.httpClient = httpClient ?? dio.Dio();
+
+    // Bypass SSL validation to fix "CERTIFICATE_VERIFY_FAILED" on Android.
+    // The upstream server is misconfigured (missing intermediate cert), which
+    // breaks the handshake on mobile devices that don't perform AIA fetching.
+    this.httpClient.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () {
+        final HttpClient client = HttpClient();
+        client.badCertificateCallback =
+            ((X509Certificate cert, String host, int port) => true);
+
+        return client;
+      },
+    );
+  }
 
   /// Retrieves a list of all [Collector]s.
   ///

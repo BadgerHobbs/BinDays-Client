@@ -9,6 +9,7 @@ part of 'bin.dart';
 Bin _$BinFromJson(Map<String, dynamic> json) => Bin(
   name: json['name'] as String,
   colour: json['colour'] as String,
+  colourHex: json['colourHex'] as String?,
   type: json['type'] as String?,
   keys: (json['keys'] as List<dynamic>).map((e) => e as String).toList(),
 );
@@ -16,6 +17,7 @@ Bin _$BinFromJson(Map<String, dynamic> json) => Bin(
 Map<String, dynamic> _$BinToJson(Bin instance) => <String, dynamic>{
   'name': instance.name,
   'colour': instance.colour,
+  'colourHex': instance.colourHex,
   'type': instance.type,
   'keys': instance.keys,
 };

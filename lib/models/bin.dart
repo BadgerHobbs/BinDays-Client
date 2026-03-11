@@ -11,8 +11,11 @@ class Bin {
   /// Gets bin name.
   final String name;
 
-  /// Gets bin colour.
+  /// Gets bin colour name.
   final String colour;
+
+  /// Gets bin colour hex value (e.g. "#FF0000").
+  final String? colourHex;
 
   /// Gets bin type.
   final String? type;
@@ -24,6 +27,7 @@ class Bin {
   const Bin({
     required this.name,
     required this.colour,
+    this.colourHex,
     this.type,
     required this.keys,
   });

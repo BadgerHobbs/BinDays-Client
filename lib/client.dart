@@ -196,7 +196,7 @@ class Client {
       final nextRequest = nextRequestExtractor(parsedResponse);
       if (nextRequest != null) {
         // Perform the client-side request required by the API
-        clientSideResponse = await _sendClientSideRequest(nextRequest);
+        clientSideResponse = await sendClientSideRequest(nextRequest);
         // Continue the loop to send the clientSideResponse back to the main API
       } else {
         // No data and no next step instruction, throw an error.
@@ -208,11 +208,13 @@ class Client {
   /// Sends a client-side request as instructed by the main API.
   ///
   /// [request] The client-side request details provided by the main API.
+  /// [validateStatus] If true (default), throws on HTTP status codes > 399.
   ///
   /// Returns a [ClientSideResponse] parsed from the response.
-  Future<ClientSideResponse> _sendClientSideRequest(
-    ClientSideRequest request,
-  ) async {
+  Future<ClientSideResponse> sendClientSideRequest(
+    ClientSideRequest request, {
+    bool validateStatus = true,
+  }) async {
     // Send request
     var response = await httpClient.request(
       request.url,
@@ -232,7 +234,9 @@ class Client {
     }
 
     // Validate response status, throws if not successful
-    response.isSuccessStatusCode();
+    if (validateStatus) {
+      response.isSuccessStatusCode();
+    }
 
     // Create response object
     var clientSideResponse = ClientSideResponse(

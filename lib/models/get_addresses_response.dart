@@ -18,14 +18,10 @@ class GetAddressesResponse {
   /// Gets the list of addresses found.
   final List<Address>? addresses;
 
-  /// Gets the current UID format version for this collector.
-  final int? collectorVersion;
-
   /// Creates an instance of [GetAddressesResponse].
   const GetAddressesResponse({
     this.nextClientSideRequest,
     this.addresses,
-    this.collectorVersion,
   });
 
   /// Creates a [GetAddressesResponse] from its JSON representation.

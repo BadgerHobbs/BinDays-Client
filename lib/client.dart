@@ -113,22 +113,7 @@ class Client {
     return await _fetchData<List<Address>, GetAddressesResponse>(
       url: url,
       responseParser: (json) => GetAddressesResponse.fromJson(json),
-      dataExtractor: (response) {
-        if (response.addresses == null) return null;
-        final version = response.collectorVersion;
-        return response.addresses!
-            .map(
-              (a) => Address(
-                property: a.property,
-                street: a.street,
-                town: a.town,
-                postcode: a.postcode,
-                uid: a.uid,
-                collectorVersion: version,
-              ),
-            )
-            .toList();
-      },
+      dataExtractor: (response) => response.addresses,
       nextRequestExtractor: (response) => response.nextClientSideRequest,
       errorMessage: "No addresses found for postcode '$postcode'.",
     );

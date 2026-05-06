@@ -23,6 +23,10 @@ class Address {
   /// Gets address uid.
   final String? uid;
 
+  /// Gets the collector UID format version that was current when this address was fetched.
+  /// Sent with bin day requests so the API can detect stale UIDs after a format change.
+  final int? collectorVersion;
+
   /// Creates an instance of [Address].
   const Address({
     this.property,
@@ -30,6 +34,7 @@ class Address {
     this.town,
     this.postcode,
     this.uid,
+    this.collectorVersion,
   });
 
   /// Creates an [Address] from its JSON representation.

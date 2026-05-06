@@ -19,6 +19,7 @@ GetAddressesResponse _$GetAddressesResponseFromJson(
       (json['addresses'] as List<dynamic>?)
           ?.map((e) => Address.fromJson(e as Map<String, dynamic>))
           .toList(),
+  collectorVersion: (json['collectorVersion'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$GetAddressesResponseToJson(
@@ -26,4 +27,5 @@ Map<String, dynamic> _$GetAddressesResponseToJson(
 ) => <String, dynamic>{
   'nextClientSideRequest': instance.nextClientSideRequest,
   'addresses': instance.addresses,
+  'collectorVersion': instance.collectorVersion,
 };

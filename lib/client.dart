@@ -5,6 +5,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:bindays_client/extensions/dio_response_extension.dart';
 
 // Internal Imports
+import 'package:bindays_client/exceptions/address_expired_exception.dart';
 import 'package:bindays_client/extensions/uri_extension.dart';
 import 'package:bindays_client/models/address.dart';
 import 'package:bindays_client/models/bin_day.dart';
@@ -112,7 +113,22 @@ class Client {
     return await _fetchData<List<Address>, GetAddressesResponse>(
       url: url,
       responseParser: (json) => GetAddressesResponse.fromJson(json),
-      dataExtractor: (response) => response.addresses,
+      dataExtractor: (response) {
+        if (response.addresses == null) return null;
+        final version = response.collectorVersion;
+        return response.addresses!
+            .map(
+              (a) => Address(
+                property: a.property,
+                street: a.street,
+                town: a.town,
+                postcode: a.postcode,
+                uid: a.uid,
+                collectorVersion: version,
+              ),
+            )
+            .toList();
+      },
       nextRequestExtractor: (response) => response.nextClientSideRequest,
       errorMessage: "No addresses found for postcode '$postcode'.",
     );
@@ -126,11 +142,15 @@ class Client {
   /// Returns a list of [BinDay] objects.
   /// Throws an [Exception] if the request fails or no bin days are found.
   Future<List<BinDay>> getBinDays(Collector collector, Address address) async {
+    final queryParameters = <String, String>{
+      "postcode": address.postcode!,
+      "uid": address.uid!,
+      if (address.collectorVersion != null)
+        "collectorVersion": address.collectorVersion.toString(),
+    };
     final url = baseUrl
         .add("/${collector.govUkId}/bin-days")
-        .replace(
-          queryParameters: {"postcode": address.postcode!, "uid": address.uid!},
-        );
+        .replace(queryParameters: queryParameters);
 
     // For verbose error message
     final addressString = _formatAddress(address);
@@ -176,8 +196,16 @@ class Client {
       final response = await httpClient.postUri(
         url,
         data: requestBody,
-        options: dio.Options(contentType: 'application/json'),
+        options: dio.Options(
+          contentType: 'application/json',
+          // Allow 410 through so we can throw AddressExpiredException instead of a generic error.
+          validateStatus: (status) => (status ?? 0) < 400 || status == 410,
+        ),
       );
+
+      if (response.statusCode == 410) {
+        throw const AddressExpiredException();
+      }
 
       // Validate response status, throws if not successful
       response.isSuccessStatusCode();

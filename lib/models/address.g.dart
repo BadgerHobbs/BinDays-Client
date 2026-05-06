@@ -12,6 +12,7 @@ Address _$AddressFromJson(Map<String, dynamic> json) => Address(
   town: json['town'] as String?,
   postcode: json['postcode'] as String?,
   uid: json['uid'] as String?,
+  collectorVersion: (json['collectorVersion'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$AddressToJson(Address instance) => <String, dynamic>{
@@ -20,4 +21,5 @@ Map<String, dynamic> _$AddressToJson(Address instance) => <String, dynamic>{
   'town': instance.town,
   'postcode': instance.postcode,
   'uid': instance.uid,
+  'collectorVersion': instance.collectorVersion,
 };

@@ -11,6 +11,7 @@ Collector _$CollectorFromJson(Map<String, dynamic> json) => Collector(
   websiteUrl: _uriFromJson(json['websiteUrl'] as String),
   govUkId: json['govUkId'] as String,
   govUkUrl: _uriFromJson(json['govUkUrl'] as String),
+  version: (json['version'] as num?)?.toInt() ?? 1,
 );
 
 Map<String, dynamic> _$CollectorToJson(Collector instance) => <String, dynamic>{
@@ -18,4 +19,5 @@ Map<String, dynamic> _$CollectorToJson(Collector instance) => <String, dynamic>{
   'websiteUrl': _uriToJson(instance.websiteUrl),
   'govUkId': instance.govUkId,
   'govUkUrl': _uriToJson(instance.govUkUrl),
+  'version': instance.version,
 };

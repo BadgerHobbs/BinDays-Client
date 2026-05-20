@@ -30,12 +30,16 @@ class Collector {
   @JsonKey(fromJson: _uriFromJson, toJson: _uriToJson)
   final Uri govUkUrl;
 
+  /// Gets the version of the collector.
+  final int version;
+
   /// Creates an instance of [Collector].
   const Collector({
     required this.name,
     required this.websiteUrl,
     required this.govUkId,
     required this.govUkUrl,
+    this.version = 1,
   });
 
   /// Creates a [Collector] from its JSON representation.

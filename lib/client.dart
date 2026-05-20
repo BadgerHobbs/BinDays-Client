@@ -129,7 +129,11 @@ class Client {
     final url = baseUrl
         .add("/${collector.govUkId}/bin-days")
         .replace(
-          queryParameters: {"postcode": address.postcode!, "uid": address.uid!},
+          queryParameters: {
+            "postcode": address.postcode!,
+            "uid": address.uid!,
+            "version": collector.version.toString(),
+          },
         );
 
     // For verbose error message

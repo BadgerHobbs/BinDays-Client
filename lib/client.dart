@@ -200,7 +200,7 @@ class Client {
       final nextRequest = nextRequestExtractor(parsedResponse);
       if (nextRequest != null) {
         // Perform the client-side request required by the API
-        clientSideResponse = await sendClientSideRequest(nextRequest);
+        clientSideResponse = await sendClientSideRequest(nextRequest, validateStatus: false);
         // Continue the loop to send the clientSideResponse back to the main API
       } else {
         // No data and no next step instruction, throw an error.

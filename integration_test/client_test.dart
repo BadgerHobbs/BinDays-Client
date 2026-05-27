@@ -29,6 +29,7 @@ void main() {
     'WN7 2LG',
     'BA13 3JR',
     'BN14 9NS',
+    'KA6 6EX',
   ];
 
   setUp(() {

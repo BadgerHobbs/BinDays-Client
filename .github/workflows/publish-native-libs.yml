@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feature/fold-impersonate-into-client
+      - main
     paths:
       - native_libs.version
       - tool/package_*.sh

@@ -5,6 +5,8 @@ import 'package:dio/dio.dart' as dio;
 import 'package:bindays_client/extensions/dio_response_extension.dart';
 
 // Internal Imports
+import 'package:bindays_client/src/transport/impersonate_adapter.dart';
+import 'package:bindays_client/src/transport/profiles.dart';
 import 'package:bindays_client/extensions/uri_extension.dart';
 import 'package:bindays_client/models/address.dart';
 import 'package:bindays_client/models/bin_day.dart';
@@ -29,26 +31,52 @@ class Client {
   /// Creates a new BinDays API client.
   ///
   /// Requires the API [baseUrl] (e.g. "http://localhost:5042/api").
+  ///
+  /// By default ([impersonate] true) requests go through [ImpersonateAdapter]
+  /// (libcurl-impersonate via dart:ffi), reproducing a real Chrome ([target],
+  /// default chrome131) TLS ClientHello (JA3/JA4) and HTTP/2 fingerprint. This
+  /// is required for councils behind a Cloudflare TLS-fingerprint challenge
+  /// (e.g. Sunderland) and — with certificate validation disabled — also
+  /// tolerates the incomplete certificate chains some councils and the BinDays
+  /// API serve (e.g. West Devon). It is the same transport the BinDays-API
+  /// integration tests use, so the client and tests share one code path.
+  ///
+  /// Set [impersonate] to false to fall back to the standard `dart:io`
+  /// transport (with certificate validation disabled) — used by the test
+  /// harness for hosts that must not be impersonated.
+  ///
   /// An optional [httpClient] instance can be provided. If not provided, a
   /// default [dio.Dio] instance will be created. The caller is responsible
   /// for managing the lifecycle of the [httpClient] (including closing it)
   /// if they provide it.
-  Client(this.baseUrl, [dio.Dio? httpClient]) {
+  Client(
+    this.baseUrl, {
+    dio.Dio? httpClient,
+    bool impersonate = true,
+    ImpersonateTarget target = ImpersonateTarget.chrome131,
+  }) {
     this.httpClient = httpClient ?? dio.Dio();
 
-    // Bypass SSL validation to fix "CERTIFICATE_VERIFY_FAILED" on Android.
-    // The upstream server is misconfigured (missing intermediate cert), which
-    // breaks the handshake on mobile devices that don't perform AIA fetching.
-    this.httpClient.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final HttpClient client = HttpClient();
-        client.badCertificateCallback =
-            ((X509Certificate cert, String host, int port) => true);
-
-        return client;
-      },
-    );
+    this.httpClient.httpClientAdapter = impersonate
+        ? ImpersonateAdapter(target: target, validateCertificates: false)
+        : _certBypassAdapter();
   }
+
+  /// The standard `dart:io` adapter with certificate validation disabled.
+  ///
+  /// Bypasses SSL validation to tolerate "CERTIFICATE_VERIFY_FAILED" from
+  /// servers with a misconfigured (missing intermediate) certificate chain,
+  /// which breaks the handshake on mobile devices that don't perform AIA
+  /// fetching.
+  static IOHttpClientAdapter _certBypassAdapter() => IOHttpClientAdapter(
+        createHttpClient: () {
+          final HttpClient client = HttpClient();
+          client.badCertificateCallback =
+              ((X509Certificate cert, String host, int port) => true);
+
+          return client;
+        },
+      );
 
   /// Retrieves a list of all [Collector]s.
   ///

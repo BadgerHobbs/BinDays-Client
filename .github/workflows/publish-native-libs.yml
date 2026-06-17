@@ -1,0 +1,94 @@
+name: Publish native libs
+
+# Publishes the libcurl-impersonate native binaries for every platform the
+# BinDays client supports as a single GitHub Release (tag `native-v<version>`),
+# where <version> is pinned in `native_libs.version`. Consumers (the app's
+# Gradle/CocoaPods build and `dart run bindays_client:install`) download from
+# this release, so they never depend on the upstream curl-impersonate project at
+# build time.
+#
+# Per platform we use the official upstream binaries: desktop tarballs are
+# re-published verbatim; Android pairs the official .so with the NDK's
+# libc++_shared.so; iOS wraps the official dynamic .dylib slices into a dynamic
+# xcframework (the upstream xcframework is static and unusable via dart:ffi).
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/fold-impersonate-into-client
+    paths:
+      - native_libs.version
+      - tool/package_*.sh
+      - .github/workflows/publish-native-libs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: ver
+        run: echo "version=$(cat native_libs.version)" >> "$GITHUB_OUTPUT"
+      - name: Ensure release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="native-v${{ steps.ver.outputs.version }}"
+          gh release view "$tag" >/dev/null 2>&1 || \
+            gh release create "$tag" \
+              --title "Native libs $tag" \
+              --notes "libcurl-impersonate native binaries (upstream v${{ steps.ver.outputs.version }})."
+
+  desktop:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Re-publish official desktop tarballs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VER: ${{ needs.prepare.outputs.version }}
+        run: |
+          base="https://github.com/lexiforest/curl-impersonate/releases/download/v$VER"
+          triples="x86_64-win32 arm64-win32 x86_64-macos arm64-macos x86_64-linux-gnu aarch64-linux-gnu"
+          mkdir dist
+          for t in $triples; do
+            asset="libcurl-impersonate-v$VER.$t.tar.gz"
+            curl -fsSL "$base/$asset" -o "dist/$asset"
+          done
+          gh release upload "native-v$VER" dist/*.tar.gz --clobber
+
+  android:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package Android jniLibs
+        env:
+          VER: ${{ needs.prepare.outputs.version }}
+        run: bash tool/package_android.sh "$VER" dist
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VER: ${{ needs.prepare.outputs.version }}
+        run: gh release upload "native-v$VER" dist/*.tar.gz --clobber
+
+  ios:
+    needs: prepare
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package iOS dynamic xcframework
+        env:
+          VER: ${{ needs.prepare.outputs.version }}
+        run: bash tool/package_ios.sh "$VER" dist
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VER: ${{ needs.prepare.outputs.version }}
+        run: gh release upload "native-v$VER" dist/*.tar.gz --clobber

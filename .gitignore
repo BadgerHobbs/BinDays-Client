@@ -1,3 +1,6 @@
 # https://dart.dev/guides/libraries/private-files
 # Created by `dart pub`
 .dart_tool/
+
+# Native impersonate library downloaded by `dart run bindays_client:install`.
+.native/

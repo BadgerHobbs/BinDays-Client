@@ -162,18 +162,15 @@ class LibCurl {
 
   /// Opens the library for the current platform.
   ///
-  /// On iOS the library ships as a dynamic framework embedded in the app
-  /// bundle. Because nothing references its symbols at link time (FFI resolves
-  /// them at runtime), the linker does not load it at launch, so its symbols
-  /// are not in the process's global table — [ffi.DynamicLibrary.process] can't
-  /// find them. Open the embedded framework explicitly by its bundle-relative
-  /// path instead; dyld resolves it from the app's Frameworks directory.
-  /// Everywhere else (desktop, Android) the library is a real shared object
-  /// opened by path or soname.
+  /// On iOS the library is statically linked into the app executable (from the
+  /// vendored static xcframework), with its `curl_*` symbols kept and exported
+  /// by the app's linker flags. They therefore live in the running process and
+  /// resolve via [ffi.DynamicLibrary.process] — there is no loadable file to
+  /// open. Everywhere else (desktop, Android) the library is a real shared
+  /// object opened by path or soname.
   static ffi.DynamicLibrary _load(String path) {
     if (Platform.isIOS) {
-      return ffi.DynamicLibrary.open(
-          'libcurl-impersonate.framework/libcurl-impersonate');
+      return ffi.DynamicLibrary.process();
     }
     return ffi.DynamicLibrary.open(path);
   }

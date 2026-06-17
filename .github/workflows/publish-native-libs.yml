@@ -80,15 +80,19 @@ jobs:
 
   ios:
     needs: prepare
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Package iOS dynamic xcframework
-        env:
-          VER: ${{ needs.prepare.outputs.version }}
-        run: bash tool/package_ios.sh "$VER" dist
-      - name: Upload
+      - name: Re-publish official iOS static xcframework
         env:
           GH_TOKEN: ${{ github.token }}
           VER: ${{ needs.prepare.outputs.version }}
-        run: gh release upload "native-v$VER" dist/*.tar.gz --clobber
+        run: |
+          # The official ios-xcframework is a static xcframework; the app links
+          # it into its executable and keeps the curl_* symbols via linker flags
+          # (see the CurlImpersonate podspec). Re-publish it verbatim under our
+          # asset naming.
+          base="https://github.com/lexiforest/curl-impersonate/releases/download/v$VER"
+          curl -fsSL "$base/libcurl-impersonate-v$VER.ios-xcframework.tar.gz" \
+            -o "libcurl-impersonate-ios-xcframework-v$VER.tar.gz"
+          gh release upload "native-v$VER" "libcurl-impersonate-ios-xcframework-v$VER.tar.gz" --clobber

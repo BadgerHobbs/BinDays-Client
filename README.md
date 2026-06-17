@@ -24,13 +24,11 @@ Its primary purpose is to handle the request-response cycle for fetching bin col
 Here is a basic example of how to use the client:
 
 ```dart
-import 'package:bindays_client/bindays_client.dart';
+import 'package:bindays_client/client.dart';
 
 void main() async {
-  // Configure the client
-  final client = BinDaysClient(
-    apiHost: 'https://bindays-api.example.com',
-  );
+  // Configure the client with the API base URL.
+  final client = Client(Uri.parse('https://api.bindays.app'));
 
   // Get the collector for a postcode
   final collector = await client.getCollector('SW1A 0AA');
@@ -47,6 +45,39 @@ void main() async {
   }
 }
 ```
+
+## Browser impersonation transport
+
+`Client` routes every request through a browser-impersonation transport by
+default: a Dio `HttpClientAdapter` backed by
+[`libcurl-impersonate`](https://github.com/lexiforest/curl-impersonate) via
+`dart:ffi`, reproducing a real Chrome TLS ClientHello (JA3/JA4) and HTTP/2
+fingerprint. This is required for councils behind a Cloudflare TLS-fingerprint
+challenge (e.g. Sunderland) and, with certificate validation disabled, also
+tolerates the incomplete certificate chains some councils serve (e.g. West
+Devon). Pass `impersonate: false` to fall back to the standard `dart:io`
+transport.
+
+Because the transport lives here, the app and the BinDays-API integration tests
+share one code path — there is no separate impersonation package.
+
+### Native library
+
+The native `libcurl-impersonate` binaries are published as a GitHub Release
+(tag `native-v<version>`) by the [`publish-native-libs`](.github/workflows/publish-native-libs.yml)
+workflow, pinned by [`native_libs.version`](native_libs.version). They are taken
+from the official upstream release — desktop tarballs verbatim, Android paired
+with the NDK's `libc++_shared.so`, and a dynamic iOS xcframework wrapped from the
+official dylib slices.
+
+- **App (Android/iOS):** the [BinDays-App](https://github.com/BadgerHobbs/BinDays-App)
+  build downloads the matching binary from the Release and bundles it.
+- **Desktop (`dart`/`dart test`):** provision it with
+  `dart run bindays_client:install`, which downloads the library for the current
+  platform into `.native/`.
+
+To update the native library, bump `native_libs.version` and re-run the
+`publish-native-libs` workflow.
 
 ## License
 

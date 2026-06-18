@@ -73,6 +73,9 @@ class CurlImpersonateResult {
   final Uint8List body;
 }
 
+/// Matches CR/LF, stripped from header names/values to prevent header injection.
+final RegExp _headerNewlines = RegExp(r'[\r\n]+');
+
 /// Thrown when a `libcurl` call returns a non-zero CURLcode.
 class CurlException implements Exception {
   CurlException(this.operation, this.code);
@@ -178,7 +181,12 @@ CurlImpersonateResult performImpersonatedRequest(CurlImpersonateRequest request)
 
     for (final entry in request.headers.entries) {
       if (fingerprintHeaders.contains(entry.key.toLowerCase())) continue;
-      final line = '${entry.key}: ${entry.value}'.toNativeUtf8();
+      // Strip CR/LF from the name and value so a header can't inject additional
+      // headers (or smuggle a request) across the curl_slist boundary.
+      final key = entry.key.replaceAll(_headerNewlines, '');
+      final value = entry.value.replaceAll(_headerNewlines, '');
+      if (key.isEmpty) continue;
+      final line = '$key: $value'.toNativeUtf8();
       try {
         // Assign via a temporary so a failure (nullptr) doesn't drop the
         // reference to the already-built list, which the finally must free.

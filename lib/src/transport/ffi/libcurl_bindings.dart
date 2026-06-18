@@ -129,8 +129,6 @@ typedef CurlIoCallbackNative = ffi.Size Function(
 /// Loads `libcurl-impersonate` and exposes the symbols this package uses.
 class LibCurl {
   LibCurl(String path) : _lib = _load(path) {
-    _globalInit = _lib
-        .lookupFunction<_GlobalInitNative, _GlobalInitDart>('curl_global_init');
     easyInit = _lib
         .lookupFunction<_EasyInitNative, ffi.Pointer<ffi.Void> Function()>(
             'curl_easy_init');
@@ -156,8 +154,23 @@ class LibCurl {
     _getinfoLong = _lib
         .lookupFunction<_GetinfoLongNative, _GetinfoLongDart>(
             'curl_easy_getinfo');
+  }
 
-    _globalInit(curlGlobalDefault);
+  static bool _globalInitDone = false;
+
+  /// Initialises libcurl's process-global state exactly once.
+  ///
+  /// `curl_global_init` is not thread-safe and must run once before any other
+  /// thread uses libcurl. Each request runs on its own short-lived isolate
+  /// (thread), so this is called once on the owning isolate (the
+  /// [ImpersonateAdapter] constructor) before any request isolate is spawned;
+  /// the state it sets up is process-global, so the request isolates inherit it.
+  static void ensureGlobalInit(String path) {
+    if (_globalInitDone) return;
+    final lib = _load(path);
+    lib.lookupFunction<_GlobalInitNative, _GlobalInitDart>(
+        'curl_global_init')(curlGlobalDefault);
+    _globalInitDone = true;
   }
 
   /// Opens the library for the current platform.
@@ -177,7 +190,6 @@ class LibCurl {
 
   final ffi.DynamicLibrary _lib;
 
-  late final int Function(int) _globalInit;
   late final ffi.Pointer<ffi.Void> Function() easyInit;
   late final void Function(ffi.Pointer<ffi.Void>) easyCleanup;
   late final int Function(ffi.Pointer<ffi.Void>) easyPerform;
@@ -213,12 +225,15 @@ class LibCurl {
     }
   }
 
-  /// Reads a `long`-typed info value (e.g. the response status code).
+  /// Reads a `long`-typed info value (e.g. the response status code), or 0 if
+  /// the call fails. The out-param is zero-initialised so a failed call never
+  /// returns uninitialised memory.
   int getinfoLong(ffi.Pointer<ffi.Void> handle, int info) {
     final out = malloc<ffi.Long>();
+    out.value = 0;
     try {
-      _getinfoLong(handle, info, out);
-      return out.value;
+      final rc = _getinfoLong(handle, info, out);
+      return rc != 0 ? 0 : out.value;
     } finally {
       malloc.free(out);
     }

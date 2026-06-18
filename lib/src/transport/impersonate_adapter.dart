@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 
 import 'ffi/curl_perform.dart';
+import 'ffi/libcurl_bindings.dart';
 import 'native_library.dart';
 import 'profiles.dart';
 
@@ -29,7 +30,11 @@ class ImpersonateAdapter implements HttpClientAdapter {
     String? libraryPath,
     this.validateCertificates = true,
     this.defaultTimeout = const Duration(seconds: 30),
-  }) : _libraryPath = resolveLibraryPath(explicit: libraryPath);
+  }) : _libraryPath = resolveLibraryPath(explicit: libraryPath) {
+    // Initialise libcurl's (process-global, not thread-safe) state once here, on
+    // this isolate, before any per-request isolate is spawned.
+    LibCurl.ensureGlobalInit(_libraryPath);
+  }
 
   /// The browser fingerprint to reproduce.
   final ImpersonateTarget target;

@@ -165,7 +165,10 @@ CurlImpersonateResult performImpersonatedRequest(CurlImpersonateRequest request)
     // behaviour — matching browsers and Dio — is to GET the redirect target.
     // Other methods (PUT, PATCH, DELETE) still need CUSTOMREQUEST.
     final isPostWithBody = hasBody && method == 'POST';
-    if (!isPostWithBody && method != 'GET') {
+    if (!isPostWithBody && (method != 'GET' || hasBody)) {
+      // Keep the requested method explicit. In particular a GET with a body must
+      // stay GET — setting POSTFIELDS above would otherwise make libcurl switch
+      // it to POST.
       curl.setoptString(handle, CurlOpt.customRequest, method);
     }
 
@@ -173,7 +176,13 @@ CurlImpersonateResult performImpersonatedRequest(CurlImpersonateRequest request)
       if (fingerprintHeaders.contains(entry.key.toLowerCase())) continue;
       final line = '${entry.key}: ${entry.value}'.toNativeUtf8();
       try {
-        headerList = curl.slistAppend(headerList, line.cast());
+        // Assign via a temporary so a failure (nullptr) doesn't drop the
+        // reference to the already-built list, which the finally must free.
+        final updated = curl.slistAppend(headerList, line.cast());
+        if (updated == ffi.nullptr) {
+          throw CurlException('curl_slist_append', -1);
+        }
+        headerList = updated;
       } finally {
         malloc.free(line);
       }

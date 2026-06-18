@@ -17,6 +17,7 @@ NDK="${ANDROID_NDK_LATEST_HOME:?ANDROID_NDK_LATEST_HOME not set}"
 SYSROOT="$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib"
 
 WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
 STAGE="$WORK/jniLibs"
 
 # Android ABI -> upstream release triple.

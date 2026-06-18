@@ -14,7 +14,10 @@ VER="${1:?version required}"
 OUT="${2:?out dir required}"
 BASE="https://github.com/lexiforest/curl-impersonate/releases/download/v$VER"
 NDK="${ANDROID_NDK_LATEST_HOME:?ANDROID_NDK_LATEST_HOME not set}"
-SYSROOT="$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib"
+# The prebuilt toolchain dir is host-specific (linux-x86_64, darwin-x86_64, ...);
+# there is exactly one, so detect it rather than hardcoding the host.
+PREBUILT="$(ls -d "$NDK"/toolchains/llvm/prebuilt/*/ | head -n1)"
+SYSROOT="${PREBUILT%/}/sysroot/usr/lib"
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT

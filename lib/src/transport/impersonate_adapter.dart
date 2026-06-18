@@ -95,7 +95,7 @@ class ImpersonateAdapter implements HttpClientAdapter {
     }
 
     final responseHeaders = <String, List<String>>{};
-    result.headers.forEach((key, value) => responseHeaders[key] = [value]);
+    result.headers.forEach((key, value) => responseHeaders[key] = value);
 
     return ResponseBody.fromBytes(
       result.body,

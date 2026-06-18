@@ -47,8 +47,8 @@ void main() {
 
       expect(result.statusCode, 200);
       expect(result.reasonPhrase, 'OK');
-      expect(result.headers['content-type'], 'text/html');
-      expect(result.headers['set-cookie'], 'a=1');
+      expect(result.headers['content-type'], ['text/html']);
+      expect(result.headers['set-cookie'], ['a=1']);
     });
 
     test('keeps only the final block after redirects', () {
@@ -63,10 +63,10 @@ void main() {
 
       expect(result.statusCode, 200);
       expect(result.headers.containsKey('location'), isFalse);
-      expect(result.headers['content-type'], 'application/json');
+      expect(result.headers['content-type'], ['application/json']);
     });
 
-    test('comma-joins repeated headers', () {
+    test('preserves repeated headers as a list', () {
       final result = parseResponseHeaders(bytes(
         'HTTP/1.1 200 OK\r\n'
         'Set-Cookie: a=1\r\n'
@@ -74,7 +74,7 @@ void main() {
         '\r\n',
       ));
 
-      expect(result.headers['set-cookie'], 'a=1,b=2');
+      expect(result.headers['set-cookie'], ['a=1', 'b=2']);
     });
 
     test('handles HTTP/2 status lines with no reason phrase', () {

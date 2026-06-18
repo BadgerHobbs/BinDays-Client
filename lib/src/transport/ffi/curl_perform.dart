@@ -69,7 +69,7 @@ class CurlImpersonateResult {
 
   final int statusCode;
   final String reasonPhrase;
-  final Map<String, String> headers;
+  final Map<String, List<String>> headers;
   final Uint8List body;
 }
 
@@ -101,27 +101,31 @@ CurlImpersonateResult performImpersonatedRequest(CurlImpersonateRequest request)
   final bodyBytes = BytesBuilder(copy: false);
   final headerBytes = BytesBuilder(copy: false);
 
-  final writeCallback = ffi.NativeCallable<CurlIoCallbackNative>.isolateLocal(
-    (ffi.Pointer<ffi.Uint8> ptr, int size, int nmemb, ffi.Pointer<ffi.Void> _) {
-      final total = size * nmemb;
-      bodyBytes.add(Uint8List.fromList(ptr.asTypedList(total)));
-      return total;
-    },
-    exceptionalReturn: 0,
-  );
-  final headerCallback = ffi.NativeCallable<CurlIoCallbackNative>.isolateLocal(
-    (ffi.Pointer<ffi.Uint8> ptr, int size, int nmemb, ffi.Pointer<ffi.Void> _) {
-      final total = size * nmemb;
-      headerBytes.add(Uint8List.fromList(ptr.asTypedList(total)));
-      return total;
-    },
-    exceptionalReturn: 0,
-  );
-
+  // Declared nullable and created inside the try so that if the second
+  // callback's creation throws, the first is still closed by the finally.
+  ffi.NativeCallable<CurlIoCallbackNative>? writeCallback;
+  ffi.NativeCallable<CurlIoCallbackNative>? headerCallback;
   ffi.Pointer<ffi.Void> headerList = ffi.nullptr;
   ffi.Pointer<ffi.Uint8> nativeBody = ffi.nullptr;
 
   try {
+    writeCallback = ffi.NativeCallable<CurlIoCallbackNative>.isolateLocal(
+      (ffi.Pointer<ffi.Uint8> ptr, int size, int nmemb, ffi.Pointer<ffi.Void> _) {
+        final total = size * nmemb;
+        bodyBytes.add(Uint8List.fromList(ptr.asTypedList(total)));
+        return total;
+      },
+      exceptionalReturn: 0,
+    );
+    headerCallback = ffi.NativeCallable<CurlIoCallbackNative>.isolateLocal(
+      (ffi.Pointer<ffi.Uint8> ptr, int size, int nmemb, ffi.Pointer<ffi.Void> _) {
+        final total = size * nmemb;
+        headerBytes.add(Uint8List.fromList(ptr.asTypedList(total)));
+        return total;
+      },
+      exceptionalReturn: 0,
+    );
+
     // Apply the browser profile first; any option set afterwards overrides it.
     final target = request.target.toNativeUtf8();
     try {
@@ -212,23 +216,27 @@ CurlImpersonateResult performImpersonatedRequest(CurlImpersonateRequest request)
     if (headerList != ffi.nullptr) curl.slistFreeAll(headerList);
     if (nativeBody != ffi.nullptr) malloc.free(nativeBody);
     curl.easyCleanup(handle);
-    writeCallback.close();
-    headerCallback.close();
+    writeCallback?.close();
+    headerCallback?.close();
   }
 }
 
 /// Parses curl's dumped response headers into a status code, a case-normalised
-/// header map (lower-cased keys, comma-joined repeats) and the reason phrase.
+/// header map (lower-cased keys; repeated headers preserved as a list) and the
+/// reason phrase.
+///
+/// Repeated headers (e.g. `Set-Cookie`) are kept as separate list entries rather
+/// than comma-joined, since their values can legitimately contain commas (e.g.
+/// `Expires=Wed, 09 Jun ...`), which comma-joining would corrupt.
 ///
 /// curl emits one header block per response; following redirects accumulates
 /// several. Each status line begins a new block, so resetting there keeps only
-/// the final response — matching the BinDays-API curl parser. Exposed for unit
-/// testing; not part of the public API.
-({int statusCode, String reasonPhrase, Map<String, String> headers})
+/// the final response. Exposed for unit testing; not part of the public API.
+({int statusCode, String reasonPhrase, Map<String, List<String>> headers})
     parseResponseHeaders(Uint8List bytes) {
   var statusCode = 0;
   var reasonPhrase = '';
-  final headers = <String, String>{};
+  final headers = <String, List<String>>{};
 
   final text = latin1.decode(bytes, allowInvalid: true);
   for (final rawLine in text.split('\n')) {
@@ -249,7 +257,7 @@ CurlImpersonateResult performImpersonatedRequest(CurlImpersonateRequest request)
 
     final key = line.substring(0, separator).trim().toLowerCase();
     final value = line.substring(separator + 1).trim();
-    headers[key] = headers.containsKey(key) ? '${headers[key]},$value' : value;
+    headers.putIfAbsent(key, () => <String>[]).add(value);
   }
 
   return (statusCode: statusCode, reasonPhrase: reasonPhrase, headers: headers);

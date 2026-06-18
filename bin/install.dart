@@ -77,11 +77,19 @@ Future<void> main(List<String> args) async {
   stderr.writeln('Extracting ${archive.path}');
   // Run from the dest dir with a relative archive name so tar does not read a
   // Windows drive-letter colon as a remote host.
-  final result = Process.runSync(
-    'tar',
-    ['-xzf', asset],
-    workingDirectory: destDir.path,
-  );
+  final ProcessResult result;
+  try {
+    result = Process.runSync(
+      'tar',
+      ['-xzf', asset],
+      workingDirectory: destDir.path,
+    );
+  } on ProcessException catch (e) {
+    stderr.writeln(
+        'Failed to run "tar" (is it installed and on PATH?): ${e.message}');
+    exitCode = 1;
+    return;
+  }
   if (result.exitCode != 0) {
     stderr.writeln('tar failed: ${result.stderr}');
     exitCode = 1;

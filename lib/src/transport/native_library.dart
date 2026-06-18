@@ -71,7 +71,9 @@ String? _findLibraryIn(Directory dir, {required bool recursive}) {
 /// directory's parent. The executable-relative entries matter when the host app
 /// is a compiled binary launched with an unrelated working directory.
 List<String> _baseDirectories() {
-  final dirs = <String>[Directory.current.path];
+  // A Set so an executable launched from the current directory doesn't yield
+  // duplicate entries (and duplicate directory scans).
+  final dirs = <String>{Directory.current.path};
 
   try {
     final exeFile = File(Platform.resolvedExecutable);
@@ -83,7 +85,7 @@ List<String> _baseDirectories() {
     // resolvedExecutable can be unavailable in some embedded contexts.
   }
 
-  return dirs;
+  return dirs.toList();
 }
 
 String _join(String dir, String name) => '$dir${Platform.pathSeparator}$name';
@@ -113,10 +115,11 @@ String resolveLibraryPath({String? explicit, bool requireExisting = false}) {
     searched.add(envPath);
   }
 
-  // On Android the library ships inside the APK and is loaded by soname from
-  // the app's native library dir; the sandbox can't list arbitrary directories,
-  // so skip the filesystem scan and let the OS loader resolve the bare name.
-  if (Platform.isAndroid) {
+  // On Android the library ships inside the APK and is loaded by soname; on iOS
+  // it is statically linked into the app executable (resolved via
+  // DynamicLibrary.process(), so the path is unused). Either way there is no
+  // file to find — skip the filesystem scan and return the bare name.
+  if (Platform.isAndroid || Platform.isIOS) {
     return _canonicalLibraryName();
   }
 

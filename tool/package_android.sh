@@ -23,14 +23,16 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 STAGE="$WORK/jniLibs"
 
-# Android ABI -> upstream release triple.
-declare -A ABIS=(
-  [arm64-v8a]=aarch64-linux-android
-  [x86_64]=x86_64-linux-android
+# Android ABI : upstream release triple (indexed array, so this works on the
+# Bash 3.2 that ships with macOS — `declare -A` is unsupported there).
+ABIS=(
+  "arm64-v8a:aarch64-linux-android"
+  "x86_64:x86_64-linux-android"
 )
 
-for abi in "${!ABIS[@]}"; do
-  triple="${ABIS[$abi]}"
+for pair in "${ABIS[@]}"; do
+  abi="${pair%%:*}"
+  triple="${pair##*:}"
   echo "==> $abi ($triple)"
   mkdir -p "$WORK/$triple" "$STAGE/$abi"
   curl -fsSL "$BASE/libcurl-impersonate-v$VER.$triple.tar.gz" -o "$WORK/$triple.tgz"

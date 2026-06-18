@@ -85,7 +85,23 @@ class ImpersonateAdapter implements HttpClientAdapter {
 
     final CurlImpersonateResult result;
     try {
-      result = await Isolate.run(() => performImpersonatedRequest(request));
+      final run = Isolate.run(() => performImpersonatedRequest(request));
+      // The native curl_easy_perform can't be aborted once running, but race it
+      // against cancelFuture so a cancelled request unblocks the caller promptly
+      // (the orphaned isolate finishes and is discarded).
+      if (cancelFuture != null) {
+        result = await Future.any([
+          run,
+          cancelFuture.then<CurlImpersonateResult>(
+            (_) => throw DioException(
+              requestOptions: options,
+              type: DioExceptionType.cancel,
+            ),
+          ),
+        ]);
+      } else {
+        result = await run;
+      }
     } on CurlException catch (error) {
       throw DioException.connectionError(
         requestOptions: options,

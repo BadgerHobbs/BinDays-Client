@@ -130,8 +130,15 @@ String _resolveVersion() {
 String? _findLibrary(Directory root) {
   if (!root.existsSync()) return null;
 
+  final List<FileSystemEntity> entities;
+  try {
+    entities = root.listSync(recursive: true, followLinks: false);
+  } on FileSystemException {
+    return null;
+  }
+
   final matches = <String>[];
-  for (final entity in root.listSync(recursive: true, followLinks: false)) {
+  for (final entity in entities) {
     final base = _baseName(entity.path);
     // Match by name regardless of entity type so symlinks (Link, not File) are
     // considered; existsSync() follows the link and confirms a real target.

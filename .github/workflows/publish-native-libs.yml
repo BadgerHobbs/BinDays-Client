@@ -7,13 +7,20 @@ name: Publish native libs
 # this release, so they never depend on the upstream curl-impersonate project at
 # build time.
 #
-# Per platform we use the official upstream binaries: desktop tarballs are
-# re-published verbatim; Android pairs the official .so with the NDK's
-# libc++_shared.so; iOS wraps the official dynamic .dylib slices into a dynamic
-# xcframework (the upstream xcframework is static and unusable via dart:ffi).
+# Desktop and iOS use the official upstream binaries (desktop tarballs are
+# re-published verbatim; iOS re-publishes the official static xcframework).
+# Android is built from source, because upstream's official Android binaries are
+# only 4 KB page-size aligned and Google Play now requires 16 KB compatibility;
+# tool/package_android.sh rebuilds libcurl-impersonate.so 16 KB-aligned and
+# pairs it with the NDK's libc++_shared.so.
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and verify the libs without uploading to the release"
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -37,12 +44,18 @@ jobs:
       - name: Ensure release exists
         env:
           GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           tag="native-v${{ steps.ver.outputs.version }}"
-          gh release view "$tag" >/dev/null 2>&1 || \
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists."
+          elif [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run: release $tag does not exist; skipping creation."
+          else
             gh release create "$tag" \
               --title "Native libs $tag" \
               --notes "libcurl-impersonate native binaries (upstream v${{ steps.ver.outputs.version }})."
+          fi
 
   desktop:
     needs: prepare
@@ -53,6 +66,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VER: ${{ needs.prepare.outputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           base="https://github.com/lexiforest/curl-impersonate/releases/download/v$VER"
           triples="x86_64-win32 arm64-win32 x86_64-macos arm64-macos x86_64-linux-gnu aarch64-linux-gnu"
@@ -61,22 +75,59 @@ jobs:
             asset="libcurl-impersonate-v$VER.$t.tar.gz"
             curl -fsSL "$base/$asset" -o "dist/$asset"
           done
-          gh release upload "native-v$VER" dist/*.tar.gz --clobber
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run: skipping upload of dist/*.tar.gz"
+          else
+            gh release upload "native-v$VER" dist/*.tar.gz --clobber
+          fi
 
   android:
     needs: prepare
     runs-on: ubuntu-latest
+    # libcurl-impersonate is built from source for both ABIs (see
+    # tool/package_android.sh), which compiles BoringSSL + curl twice.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - name: Package Android jniLibs
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config cmake ninja-build golang-go \
+            autoconf automake libtool gperf
+      # Build curl with NDK r26d to match upstream's proven Android toolchain;
+      # the only deviation from upstream's build is the 16 KB max-page-size link
+      # flag added by tool/package_android.sh.
+      - name: Set up Android NDK r26d (curl build toolchain)
+        id: ndk-build
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+      # r26d's prebuilt libc++_shared.so is only 4 KB-aligned; source it from
+      # r27c instead, whose NDK prebuilts are 16 KB-aligned. Pairing it with the
+      # r26d-built curl is ABI-safe and matches what the app already ships.
+      - name: Set up Android NDK r27c (16 KB-aligned libc++_shared.so)
+        id: ndk-cxx
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
+      - name: Build and package Android jniLibs
         env:
           VER: ${{ needs.prepare.outputs.version }}
+          ANDROID_BUILD_NDK: ${{ steps.ndk-build.outputs.ndk-path }}
+          ANDROID_CXX_NDK: ${{ steps.ndk-cxx.outputs.ndk-path }}
         run: bash tool/package_android.sh "$VER" dist
       - name: Upload
         env:
           GH_TOKEN: ${{ github.token }}
           VER: ${{ needs.prepare.outputs.version }}
-        run: gh release upload "native-v$VER" dist/*.tar.gz --clobber
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run: skipping upload of dist/*.tar.gz"
+          else
+            gh release upload "native-v$VER" dist/*.tar.gz --clobber
+          fi
 
   ios:
     needs: prepare
@@ -87,6 +138,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VER: ${{ needs.prepare.outputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           # The official ios-xcframework is a static xcframework; the app links
           # it into its executable and keeps the curl_* symbols via linker flags
@@ -95,4 +147,8 @@ jobs:
           base="https://github.com/lexiforest/curl-impersonate/releases/download/v$VER"
           curl -fsSL "$base/libcurl-impersonate-v$VER.ios-xcframework.tar.gz" \
             -o "libcurl-impersonate-ios-xcframework-v$VER.tar.gz"
-          gh release upload "native-v$VER" "libcurl-impersonate-ios-xcframework-v$VER.tar.gz" --clobber
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run: skipping upload of libcurl-impersonate-ios-xcframework-v$VER.tar.gz"
+          else
+            gh release upload "native-v$VER" "libcurl-impersonate-ios-xcframework-v$VER.tar.gz" --clobber
+          fi

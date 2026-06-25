@@ -7,10 +7,12 @@ name: Publish native libs
 # this release, so they never depend on the upstream curl-impersonate project at
 # build time.
 #
-# Per platform we use the official upstream binaries: desktop tarballs are
-# re-published verbatim; Android pairs the official .so with the NDK's
-# libc++_shared.so; iOS wraps the official dynamic .dylib slices into a dynamic
-# xcframework (the upstream xcframework is static and unusable via dart:ffi).
+# Desktop and iOS use the official upstream binaries (desktop tarballs are
+# re-published verbatim; iOS re-publishes the official static xcframework).
+# Android is built from source, because upstream's official Android binaries are
+# only 4 KB page-size aligned and Google Play now requires 16 KB compatibility;
+# tool/package_android.sh rebuilds libcurl-impersonate.so 16 KB-aligned and
+# pairs it with the NDK's libc++_shared.so.
 
 on:
   workflow_dispatch:
@@ -66,11 +68,29 @@ jobs:
   android:
     needs: prepare
     runs-on: ubuntu-latest
+    # libcurl-impersonate is built from source for both ABIs (see
+    # tool/package_android.sh), which compiles BoringSSL + curl twice.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - name: Package Android jniLibs
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config cmake ninja-build golang-go \
+            autoconf automake libtool gperf
+      # Pin NDK r26d to match upstream's proven Android toolchain; the only
+      # deviation from upstream's build is the 16 KB max-page-size link flag
+      # added by tool/package_android.sh.
+      - name: Set up Android NDK r26d
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+      - name: Build and package Android jniLibs
         env:
           VER: ${{ needs.prepare.outputs.version }}
+          ANDROID_NDK_LATEST_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: bash tool/package_android.sh "$VER" dist
       - name: Upload
         env:

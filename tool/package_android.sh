@@ -14,21 +14,28 @@
 #
 # Usage: package_android.sh <version> <out_dir>
 # Requires: git, tar, make, cmake, ninja, go, autoconf, automake, libtool,
-#   gperf, a host C/C++ toolchain, and the Android NDK at
-#   $ANDROID_NDK_LATEST_HOME (NDK r26d, to match upstream's proven toolchain).
+#   gperf, a host C/C++ toolchain, and two Android NDKs:
+#     $ANDROID_BUILD_NDK - NDK r26d, to match upstream's proven curl toolchain.
+#     $ANDROID_CXX_NDK   - NDK r27+, whose prebuilt libc++_shared.so is already
+#                          16 KB-aligned (r26d's is only 4 KB-aligned). Pairing a
+#                          newer libc++_shared.so with the r26d-built curl is
+#                          ABI-safe and matches what the app already ships.
 set -euo pipefail
 
 VER="${1:?version required}"
 OUT="${2:?out dir required}"
-NDK="${ANDROID_NDK_LATEST_HOME:?ANDROID_NDK_LATEST_HOME not set}"
+BUILD_NDK="${ANDROID_BUILD_NDK:?ANDROID_BUILD_NDK not set}"
+CXX_NDK="${ANDROID_CXX_NDK:?ANDROID_CXX_NDK not set}"
 API=21  # Matches upstream's Android API level.
 
 # The prebuilt toolchain dir is host-specific (linux-x86_64, darwin-x86_64, ...);
 # there is exactly one, so detect it rather than hardcoding the host.
-PREBUILT="$(ls -d "$NDK"/toolchains/llvm/prebuilt/*/ | head -n1)"
-PREBUILT="${PREBUILT%/}"
-SYSROOT="$PREBUILT/sysroot/usr/lib"
-READELF="$PREBUILT/bin/llvm-readelf"
+BUILD_PREBUILT="$(ls -d "$BUILD_NDK"/toolchains/llvm/prebuilt/*/ | head -n1)"
+BUILD_PREBUILT="${BUILD_PREBUILT%/}"
+CXX_PREBUILT="$(ls -d "$CXX_NDK"/toolchains/llvm/prebuilt/*/ | head -n1)"
+CXX_PREBUILT="${CXX_PREBUILT%/}"
+CXX_SYSROOT="$CXX_PREBUILT/sysroot/usr/lib"
+READELF="$BUILD_PREBUILT/bin/llvm-readelf"
 
 # Google Play requires every shared library to be 16 KB page-size compatible:
 # each PT_LOAD segment must have an alignment of at least 16384 (0x4000) so the
@@ -83,20 +90,20 @@ for pair in "${ABIS[@]}"; do
   install_dir="$WORK/install-$abi"
   mkdir -p "$install_dir"
 
-  # Android toolchain env (mirrors upstream's build.yml).
-  export AR="$PREBUILT/bin/llvm-ar"
-  export CC="$PREBUILT/bin/${triple}${API}-clang"
+  # Android toolchain env (mirrors upstream's build.yml), using the r26d NDK.
+  export AR="$BUILD_PREBUILT/bin/llvm-ar"
+  export CC="$BUILD_PREBUILT/bin/${triple}${API}-clang"
   export AS="$CC"
-  export CXX="$PREBUILT/bin/${triple}${API}-clang++"
-  export RANLIB="$PREBUILT/bin/llvm-ranlib"
-  export STRIP="$PREBUILT/bin/llvm-strip"
-  export ANDROID_NDK_HOME="$NDK"
+  export CXX="$BUILD_PREBUILT/bin/${triple}${API}-clang++"
+  export RANLIB="$BUILD_PREBUILT/bin/llvm-ranlib"
+  export STRIP="$BUILD_PREBUILT/bin/llvm-strip"
+  export ANDROID_NDK_HOME="$BUILD_NDK"
   export CFLAGS="-fPIC"
   export CXXFLAGS="-fPIC"
 
   cmake_args="-G Ninja -DCMAKE_INSTALL_PREFIX=$install_dir"
   cmake_args="$cmake_args -DCMAKE_SYSTEM_NAME=Android"
-  cmake_args="$cmake_args -DCMAKE_ANDROID_NDK=$NDK"
+  cmake_args="$cmake_args -DCMAKE_ANDROID_NDK=$BUILD_NDK"
   cmake_args="$cmake_args -DCMAKE_ANDROID_ARCH_ABI=$abi -DCMAKE_SYSTEM_VERSION=$API"
 
   make -C "$SRC" configure     BUILD_DIR="build-$abi" CMAKE_CONFIGURE_ARGS="$cmake_args"
@@ -107,7 +114,7 @@ for pair in "${ABIS[@]}"; do
   # it with the NDK's libc++_shared.so, then verify both are 16 KB-aligned.
   cp "$(readlink -f "$install_dir/lib/libcurl-impersonate.so")" \
      "$STAGE/$abi/libcurl-impersonate.so"
-  cp "$SYSROOT/$triple/libc++_shared.so" "$STAGE/$abi/"
+  cp "$CXX_SYSROOT/$triple/libc++_shared.so" "$STAGE/$abi/"
   assert_16kb_aligned "$STAGE/$abi/libcurl-impersonate.so"
   assert_16kb_aligned "$STAGE/$abi/libc++_shared.so"
 done

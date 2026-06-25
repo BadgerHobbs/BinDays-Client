@@ -95,18 +95,27 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential pkg-config cmake ninja-build golang-go \
             autoconf automake libtool gperf
-      # Pin NDK r26d to match upstream's proven Android toolchain; the only
-      # deviation from upstream's build is the 16 KB max-page-size link flag
-      # added by tool/package_android.sh.
-      - name: Set up Android NDK r26d
-        id: setup-ndk
+      # Build curl with NDK r26d to match upstream's proven Android toolchain;
+      # the only deviation from upstream's build is the 16 KB max-page-size link
+      # flag added by tool/package_android.sh.
+      - name: Set up Android NDK r26d (curl build toolchain)
+        id: ndk-build
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r26d
+      # r26d's prebuilt libc++_shared.so is only 4 KB-aligned; source it from
+      # r27c instead, whose NDK prebuilts are 16 KB-aligned. Pairing it with the
+      # r26d-built curl is ABI-safe and matches what the app already ships.
+      - name: Set up Android NDK r27c (16 KB-aligned libc++_shared.so)
+        id: ndk-cxx
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27c
       - name: Build and package Android jniLibs
         env:
           VER: ${{ needs.prepare.outputs.version }}
-          ANDROID_NDK_LATEST_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          ANDROID_BUILD_NDK: ${{ steps.ndk-build.outputs.ndk-path }}
+          ANDROID_CXX_NDK: ${{ steps.ndk-cxx.outputs.ndk-path }}
         run: bash tool/package_android.sh "$VER" dist
       - name: Upload
         env:

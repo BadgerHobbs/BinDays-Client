@@ -11,8 +11,12 @@ class ImpersonateTarget {
   /// The `curl-impersonate` target identifier (e.g. `chrome131`).
   final String name;
 
-  /// Chrome 131 on desktop. Matches the target used by the BinDays-API tests.
+  /// Chrome 131 on desktop.
   static const ImpersonateTarget chrome131 = ImpersonateTarget('chrome131');
+
+  /// Chrome 146 on desktop. The default target, shared with the BinDays-API
+  /// tests.
+  static const ImpersonateTarget chrome146 = ImpersonateTarget('chrome146');
 
   /// Resolves a target from its identifier. Any name accepted by the linked
   /// `libcurl-impersonate` build is valid; unknown names fail later, when

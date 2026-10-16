@@ -34,7 +34,7 @@ class Client {
   ///
   /// By default ([impersonate] true) requests go through [ImpersonateAdapter]
   /// (libcurl-impersonate via dart:ffi), reproducing a real Chrome ([target],
-  /// default chrome131) TLS ClientHello (JA3/JA4) and HTTP/2 fingerprint. This
+  /// default chrome146) TLS ClientHello (JA3/JA4) and HTTP/2 fingerprint. This
   /// is required for councils behind a Cloudflare TLS-fingerprint challenge
   /// (e.g. Sunderland) and — with certificate validation disabled — also
   /// tolerates the incomplete certificate chains some councils and the BinDays
@@ -53,7 +53,7 @@ class Client {
     this.baseUrl, {
     dio.Dio? httpClient,
     bool impersonate = true,
-    ImpersonateTarget target = ImpersonateTarget.chrome131,
+    ImpersonateTarget target = ImpersonateTarget.chrome146,
   }) {
     this.httpClient = httpClient ?? dio.Dio();
 

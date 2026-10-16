@@ -19,7 +19,7 @@ const Set<String> _transportHeaders = {'content-length'};
 /// Plug it into a [Dio] instance:
 /// ```dart
 /// final dio = Dio();
-/// dio.httpClientAdapter = ImpersonateAdapter(target: ImpersonateTarget.chrome131);
+/// dio.httpClientAdapter = ImpersonateAdapter(target: ImpersonateTarget.chrome146);
 /// ```
 ///
 /// Each request is performed on a short-lived background isolate, since the
